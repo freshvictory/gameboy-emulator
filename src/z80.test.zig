@@ -2,8 +2,8 @@ const std = @import("std");
 const Z80 = @import("z80.zig");
 const Flags = Z80.Flags;
 
-pub fn run_tests_in(comptime filename: []const u8) !void {
-    const json = @embedFile(filename);
+pub fn run_tests_for(comptime instruction: []const u8, expected_clock_m: usize) !void {
+    const json = @embedFile("sm83/v1/" ++ instruction ++ ".json");
     const parsed_test_cases = try std.json.parseFromSlice([]TestCase, std.testing.allocator, json, .{
         .ignore_unknown_fields = true,
     });
@@ -11,7 +11,7 @@ pub fn run_tests_in(comptime filename: []const u8) !void {
 
     var errored: usize = 0;
     for (parsed_test_cases.value) |test_case| {
-        test_case.run() catch {
+        test_case.run(expected_clock_m) catch {
             errored += 1;
             std.debug.print("\tin test case: {s}\n\n", .{test_case.name});
         };
@@ -26,22 +26,23 @@ pub fn run_tests_in(comptime filename: []const u8) !void {
     }
 }
 
-pub const TestCase = struct {
+const TestCase = struct {
     name: []const u8,
     initial: CpuState,
     final: CpuState,
 
-    pub fn run(t: TestCase) !void {
+    pub fn run(t: TestCase, expected_clock_m: usize) !void {
         var z80 = Z80.init(.{});
         t.initial.apply(&z80);
 
         z80.step();
 
         try t.final.check(z80);
+        try std.testing.expectEqual(expected_clock_m, z80.clock.m);
     }
 };
 
-pub const CpuState = struct {
+const CpuState = struct {
     pc: u16,
     sp: u16,
     a: u8,
