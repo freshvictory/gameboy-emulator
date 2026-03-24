@@ -232,18 +232,24 @@ fn load_16(z80: *Z80, register: Register16) void {
 
 /// Increment the register by 1
 fn increment(z80: *Z80, comptime register: []const u8) void {
-    @field(z80.registers, register) +%= 1;
+    const old = @field(z80.registers, register);
+    @field(z80.registers, register) = old +% 1;
 
     z80.flags = .{
+        .half_carried = old & 0xF == 0b1111,
+        .carried = z80.flags.carried,
         .was_zero = @field(z80.registers, register) == 0,
     };
 }
 
 /// Decrement the register by 1
 fn decrement(z80: *Z80, comptime register: []const u8) void {
-    @field(z80.registers, register) -%= 1;
+    const old = @field(z80.registers, register);
+    @field(z80.registers, register) = old -% 1;
 
     z80.flags = .{
+        .half_carried = old & 0xF == 0,
+        .carried = z80.flags.carried,
         .was_zero = @field(z80.registers, register) == 0,
         .subtracted = true,
     };
@@ -277,10 +283,12 @@ fn decrement_hl(z80: *Z80) void {
 /// Add value to A
 /// Put result in A
 fn add_8(z80: *Z80, operand: u8) void {
+    const old = z80.registers.a;
     z80.registers.a, const overflowed = @addWithOverflow(z80.registers.a, operand);
 
     z80.flags = .{
         .was_zero = z80.registers.a == 0,
+        .half_carried = (operand & 0xF) + (old & 0xF) > 0b1111,
         .carried = overflowed != 0,
     };
 }
@@ -294,12 +302,14 @@ fn add_with_carry_8(z80: *Z80, operand: u8) void {
 /// Subtract value from A
 /// Put result in A
 fn subtract_8(z80: *Z80, operand: u8) void {
+    const old = z80.registers.a;
     z80.registers.a, const underflowed = @subWithOverflow(z80.registers.a, operand);
 
     z80.flags = .{
         .subtracted = true,
         .was_zero = z80.registers.a == 0,
         .carried = underflowed != 0,
+        .half_carried = (old & 0xF) < (operand & 0xF),
     };
 }
 
@@ -314,6 +324,7 @@ fn and_(z80: *Z80, operand: u8) void {
     z80.registers.a &= operand;
 
     z80.flags = .{
+        .half_carried = true,
         .was_zero = z80.registers.a == 0,
     };
 }
@@ -340,12 +351,14 @@ fn xor(z80: *Z80, operand: u8) void {
 /// If equal, flag zero
 /// If register > A, flag carry
 pub fn compare_8(z80: *Z80, operand: u8) void {
+    const old = z80.registers.a;
     const result, const underflowed = @subWithOverflow(z80.registers.a, operand);
 
     z80.flags = .{
         .subtracted = true,
         .was_zero = result == 0,
         .carried = underflowed != 0,
+        .half_carried = (old & 0xF) < (operand & 0xF),
     };
 }
 
