@@ -2,7 +2,7 @@ const std = @import("std");
 
 const Z80 = @This();
 
-mmu: [0xFFFF]u8 = [_]u8{0} ** 0xFFFF,
+mmu: [0x10000]u8 = [_]u8{0} ** 0x10000,
 
 clock: Clock = .{},
 
