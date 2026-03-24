@@ -9,15 +9,21 @@ pub fn run_tests_in(comptime filename: []const u8) !void {
     });
     defer parsed_test_cases.deinit();
 
-    var errored = false;
+    var errored: usize = 0;
     for (parsed_test_cases.value) |test_case| {
         test_case.run() catch {
-            errored = true;
+            errored += 1;
             std.debug.print("\tin test case: {s}\n\n", .{test_case.name});
         };
     }
 
-    if (errored) return error.TestExpectedEqual;
+    if (errored > 0) {
+        std.debug.print("{d} passed, {d} failed.\n", .{
+            parsed_test_cases.value.len - errored,
+            errored,
+        });
+        return error.TestExpectedEqual;
+    }
 }
 
 pub const TestCase = struct {
