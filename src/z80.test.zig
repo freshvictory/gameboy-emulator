@@ -102,7 +102,10 @@ const CpuState = struct {
         };
         std.testing.expectEqual(state.f, z80.flags.int()) catch {
             errored = true;
-            std.debug.print("\ttesting flags\n", .{});
+            std.debug.print(
+                "\ttesting flags:\n\t\texpected {}\n\t\tfound    {}\n",
+                .{ Flags.from(state.f), z80.flags },
+            );
         };
         std.testing.expectEqual(state.h, z80.registers.h) catch {
             errored = true;
