@@ -108,7 +108,7 @@ pub fn init(registers: Registers) Z80 {
 
 pub fn step(z80: *Z80) void {
     const opcode = z80.read_byte(z80.program_counter);
-    z80.program_counter += 1;
+    z80.program_counter +%= 1;
     z80.operate(opcode);
 }
 
@@ -203,7 +203,7 @@ fn operand_8(z80: *Z80, opcode: u8) u8 {
 /// Get the 8 bit value at the program counter
 fn constant_8(z80: *Z80) u8 {
     const value = z80.read_byte(z80.program_counter);
-    z80.program_counter += 1;
+    z80.program_counter +%= 1;
     return value;
 }
 
