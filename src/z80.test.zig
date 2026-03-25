@@ -141,11 +141,11 @@ test "0x00 nop" {
     try runTestsFor("00", 1);
 }
 
-test "0x01 load bc, n16" {
+test "0x01 ld bc, n16" {
     try runTestsFor("01", 3);
 }
 
-test "0x02 load [bc], a" {
+test "0x02 ld [bc], a" {
     try runTestsFor("02", 2);
 }
 
@@ -170,7 +170,7 @@ test "0x07 rcla" {
 }
 
 test "0x08 ld [a16], sp" {
-    try runTestsFor("0x08", 5);
+    try runTestsFor("08", 5);
 }
 
 test "0x09 add hl, bc" {
@@ -199,6 +199,202 @@ test "0x0E ld c, n8" {
 
 test "0x0F rrca" {
     try runTestsFor("0F", 1);
+}
+
+test "0x10 stop n8" {
+    try runTestsFor("10", 1);
+}
+
+test "0x11 ld de, n16" {
+    try runTestsFor("11", 3);
+}
+
+test "0x12 load [de], a" {
+    try runTestsFor("12", 2);
+}
+
+test "0x13 inc de" {
+    try runTestsFor("13", 2);
+}
+
+test "0x14 inc d" {
+    try runTestsFor("14", 1);
+}
+
+test "0x15 dec d" {
+    try runTestsFor("15", 1);
+}
+
+test "0x16 ld d, n8" {
+    try runTestsFor("16", 2);
+}
+
+test "0x17 rla" {
+    try runTestsFor("17", 1);
+}
+
+test "0x18 jr e8" {
+    try runTestsFor("18", 3);
+}
+
+test "0x19 add hl, de" {
+    try runTestsFor("19", 2);
+}
+
+test "0x1A ld a, [de]" {
+    try runTestsFor("1A", 2);
+}
+
+test "0x1B dec de" {
+    try runTestsFor("1B", 2);
+}
+
+test "0x1C inc e" {
+    try runTestsFor("1C", 1);
+}
+
+test "0x1D dec e" {
+    try runTestsFor("1D", 1);
+}
+
+test "0x1E ld e, n8" {
+    try runTestsFor("1E", 2);
+}
+
+test "0x1F rra" {
+    try runTestsFor("1F", 1);
+}
+
+test "0x20 jr nz, e8" {
+    // TODO: handle different clock times
+    try runTestsFor("20", 2);
+}
+
+test "0x21 ld hl, n16" {
+    try runTestsFor("21", 3);
+}
+
+test "0x22 load [hl+], a" {
+    try runTestsFor("22", 2);
+}
+
+test "0x23 inc hl" {
+    try runTestsFor("23", 2);
+}
+
+test "0x24 inc h" {
+    try runTestsFor("24", 1);
+}
+
+test "0x25 dec h" {
+    try runTestsFor("25", 1);
+}
+
+test "0x26 ld h, n8" {
+    try runTestsFor("26", 2);
+}
+
+test "0x27 daa" {
+    try runTestsFor("27", 1);
+}
+
+test "0x28 jr z, e8" {
+    // TODO: handle different clock times
+    try runTestsFor("28", 3);
+}
+
+test "0x29 add hl, hl" {
+    try runTestsFor("29", 2);
+}
+
+test "0x2A ld a, [hl+]" {
+    try runTestsFor("2A", 2);
+}
+
+test "0x2B dec hl" {
+    try runTestsFor("2B", 2);
+}
+
+test "0x2C inc l" {
+    try runTestsFor("2C", 1);
+}
+
+test "0x2D dec l" {
+    try runTestsFor("2D", 1);
+}
+
+test "0x2E ld l, n8" {
+    try runTestsFor("2E", 2);
+}
+
+test "0x2F cpl" {
+    try runTestsFor("2F", 1);
+}
+
+test "0x30 jr nz, e8" {
+    // TODO: handle different clock times
+    try runTestsFor("30", 2);
+}
+
+test "0x31 ld sp, n16" {
+    try runTestsFor("31", 3);
+}
+
+test "0x32 load [hl-], a" {
+    try runTestsFor("32", 2);
+}
+
+test "0x33 inc sp" {
+    try runTestsFor("33", 2);
+}
+
+test "0x34 inc [hl]" {
+    try runTestsFor("34", 3);
+}
+
+test "0x35 dec [hl]" {
+    try runTestsFor("35", 3);
+}
+
+test "0x36 ld [hl], n8" {
+    try runTestsFor("36", 3);
+}
+
+test "0x37 scf" {
+    try runTestsFor("37", 4);
+}
+
+test "0x38 jr c, e8" {
+    // TODO: handle different clock times
+    try runTestsFor("38", 3);
+}
+
+test "0x39 add hl, sp" {
+    try runTestsFor("39", 2);
+}
+
+test "0x3A ld a, [hl-]" {
+    try runTestsFor("3A", 2);
+}
+
+test "0x3B dec sp" {
+    try runTestsFor("3B", 2);
+}
+
+test "0x3C inc a" {
+    try runTestsFor("3C", 1);
+}
+
+test "0x3D dec a" {
+    try runTestsFor("3D", 1);
+}
+
+test "0x3E ld a, n8" {
+    try runTestsFor("3E", 2);
+}
+
+test "0x3F ccf" {
+    try runTestsFor("3F", 1);
 }
 
 test "0x40 ld b, b" {
@@ -489,6 +685,38 @@ test "0x87 add a, a" {
     try runTestsFor("87", 1);
 }
 
+test "0x88 adc a, b" {
+    try runTestsFor("88", 1);
+}
+
+test "0x89 adc a, c" {
+    try runTestsFor("89", 1);
+}
+
+test "0x8A adc a, d" {
+    try runTestsFor("8A", 1);
+}
+
+test "0x8B adc a, e" {
+    try runTestsFor("8B", 1);
+}
+
+test "0x8C adc a, h" {
+    try runTestsFor("8C", 1);
+}
+
+test "0x8D adc a, l" {
+    try runTestsFor("8D", 1);
+}
+
+test "0x8E adc a, [hl]" {
+    try runTestsFor("8E", 2);
+}
+
+test "0x8F adc a, a" {
+    try runTestsFor("8F", 1);
+}
+
 test "0x90 sub a, b" {
     try runTestsFor("90", 1);
 }
@@ -519,6 +747,38 @@ test "0x96 sub a, [hl]" {
 
 test "0x97 sub a, a" {
     try runTestsFor("97", 1);
+}
+
+test "0x98 sbc a, b" {
+    try runTestsFor("98", 1);
+}
+
+test "0x99 sbc a, c" {
+    try runTestsFor("99", 1);
+}
+
+test "0x9A sbc a, d" {
+    try runTestsFor("9A", 1);
+}
+
+test "0x9B sbc a, e" {
+    try runTestsFor("9B", 1);
+}
+
+test "0x9C sbc a, h" {
+    try runTestsFor("9C", 1);
+}
+
+test "0x9D sbc a, l" {
+    try runTestsFor("9D", 1);
+}
+
+test "0x9E sbc a, [hl]" {
+    try runTestsFor("9E", 2);
+}
+
+test "0x9F sbc a, a" {
+    try runTestsFor("9F", 1);
 }
 
 test "0xA0 and a, b" {
@@ -647,4 +907,248 @@ test "0xBE cp a, [hl]" {
 
 test "0xBF cp a, a" {
     try runTestsFor("BF", 1);
+}
+
+test "0xC0 ret nz" {
+    // TODO: handle different clock times
+    try runTestsFor("C0", 2);
+}
+
+test "0xC1 pop bc" {
+    try runTestsFor("C1", 3);
+}
+
+test "0xC2 jp nz, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("C2", 3);
+}
+
+test "0xC3 jp a16" {
+    try runTestsFor("C3", 4);
+}
+
+test "0xC4 call nz, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("C4", 3);
+}
+
+test "0xC5 push bc" {
+    try runTestsFor("C5", 4);
+}
+
+test "0xC6 add a, n8" {
+    try runTestsFor("C6", 2);
+}
+
+test "0xC7 rst $00" {
+    try runTestsFor("C7", 4);
+}
+
+test "0xC8 ret z" {
+    // TODO: handle different clock times
+    try runTestsFor("C8", 2);
+}
+
+test "0xC9 ret" {
+    try runTestsFor("C9", 4);
+}
+
+test "0xCA jp z, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("CA", 3);
+}
+
+// 0xCB prefix
+
+test "0xCC call z, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("CA", 3);
+}
+
+test "0xCD call a16" {
+    try runTestsFor("CD", 6);
+}
+
+test "0xCE adc a, n8" {
+    try runTestsFor("CE", 2);
+}
+
+test "0xCF rst $08" {
+    try runTestsFor("CF", 4);
+}
+
+test "0xD0 ret nc" {
+    // TODO: handle different clock times
+    try runTestsFor("D0", 2);
+}
+
+test "0xD1 pop de" {
+    try runTestsFor("D1", 3);
+}
+
+test "0xD2 jp nc, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("D2", 3);
+}
+
+// 0xD3 undefined
+
+test "0xD4 call nc, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("D4", 3);
+}
+
+test "0xD5 push de" {
+    try runTestsFor("D5", 4);
+}
+
+test "0xD6 sub a, n8" {
+    try runTestsFor("D6", 2);
+}
+
+test "0xD7 rst $10" {
+    try runTestsFor("D7", 4);
+}
+
+test "0xD8 ret C" {
+    // TODO: handle different clock times
+    try runTestsFor("D8", 2);
+}
+
+test "0xD9 reti" {
+    try runTestsFor("D9", 4);
+}
+
+test "0xDA jp c, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("DA", 3);
+}
+
+// 0xDB undefined
+
+test "0xDC call c, a16" {
+    // TODO: handle different clock times
+    try runTestsFor("DC", 3);
+}
+
+// 0xDD undefined
+
+test "0xDE sbc a, n8" {
+    try runTestsFor("DE", 2);
+}
+
+test "0xDF rst $18" {
+    try runTestsFor("DF", 4);
+}
+
+test "0xE0 ldh [a8], a" {
+    try runTestsFor("E0", 3);
+}
+
+test "0xE1 pop hl" {
+    try runTestsFor("E1", 3);
+}
+
+test "0xE2 ldh [c], a" {
+    try runTestsFor("E2", 2);
+}
+
+// 0xE3 undefined
+
+// 0xE4 undefined
+
+test "0xE5 push hl" {
+    try runTestsFor("E5", 4);
+}
+
+test "0xE6 and a, n8" {
+    try runTestsFor("E6", 2);
+}
+
+test "0xE7 rst $20" {
+    try runTestsFor("E7", 4);
+}
+
+test "0xE8 add sp, e8" {
+    try runTestsFor("E8", 4);
+}
+
+test "0xE9 jp, hl" {
+    try runTestsFor("E9", 1);
+}
+
+test "0xEA ld [a16], a" {
+    try runTestsFor("EA", 4);
+}
+
+// 0xEB undefined
+
+// 0xEC undefined
+
+// 0xED undefined
+
+test "0xEE xor a, n8" {
+    try runTestsFor("EE", 2);
+}
+
+test "0xEF rst $28" {
+    try runTestsFor("EF", 4);
+}
+
+test "0xF0 ldh a, [a8]" {
+    try runTestsFor("F0", 3);
+}
+
+test "0xF1 pop af" {
+    try runTestsFor("F1", 3);
+}
+
+test "0xF2 ldh a, [c]" {
+    try runTestsFor("F2", 2);
+}
+
+test "0xF3 di" {
+    try runTestsFor("F3", 1);
+}
+
+// 0xF4 undefined
+
+test "0xF5 push af" {
+    try runTestsFor("F5", 4);
+}
+
+test "0xF6 or a, n8" {
+    try runTestsFor("F6", 2);
+}
+
+test "0xF7 rst $30" {
+    try runTestsFor("F7", 4);
+}
+
+test "0xF8 ld hl, sp + e8" {
+    try runTestsFor("F8", 3);
+}
+
+test "0xF9 sp, hl" {
+    try runTestsFor("F9", 2);
+}
+
+test "0xFA ld a, [a16]" {
+    try runTestsFor("FA", 4);
+}
+
+test "0xFB ei" {
+    try runTestsFor("FB", 1);
+}
+
+// 0xFC undefined
+
+// 0xFD undefined
+
+test "0xFE cp a, n8" {
+    try runTestsFor("FE", 2);
+}
+
+test "0xFF rst $38" {
+    try runTestsFor("FF", 4);
 }
