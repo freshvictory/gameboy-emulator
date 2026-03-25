@@ -293,10 +293,18 @@ fn add(z80: *Z80, operand: u8) void {
     };
 }
 
-/// TODO
+/// Add value and carry flag to A
 fn addWithCarry(z80: *Z80, operand: u8) void {
-    _ = operand;
-    _ = z80;
+    const carry: u1 = if (z80.flags.carried) 1 else 0;
+    const old = z80.registers.a;
+    z80.registers.a, const overflowed = @addWithOverflow(z80.registers.a, operand);
+    z80.registers.a, const carry_overflow = @addWithOverflow(z80.registers.a, carry);
+
+    z80.flags = .{
+        .was_zero = z80.registers.a == 0,
+        .half_carried = (operand & 0xF) + (old & 0xF) + carry > 0xF,
+        .carried = overflowed != 0 or carry_overflow != 0,
+    };
 }
 
 /// Subtract value from A
@@ -313,10 +321,19 @@ fn subtract(z80: *Z80, operand: u8) void {
     };
 }
 
-/// TODO
+/// Subtract value and carry flag from A
 fn subtractWithCarry(z80: *Z80, operand: u8) void {
-    _ = operand;
-    _ = z80;
+    const carry: u1 = if (z80.flags.carried) 1 else 0;
+    const old = z80.registers.a;
+    z80.registers.a -%= operand;
+    z80.registers.a -%= carry;
+
+    z80.flags = .{
+        .subtracted = true,
+        .was_zero = z80.registers.a == 0,
+        .carried = old < operand +| carry,
+        .half_carried = (old & 0xF) < (operand & 0xF) + carry,
+    };
 }
 
 /// Bitwise and the value with A
@@ -350,7 +367,7 @@ fn xor(z80: *Z80, operand: u8) void {
 /// Compare value to A
 /// If equal, flag zero
 /// If register > A, flag carry
-pub fn compare(z80: *Z80, operand: u8) void {
+fn compare(z80: *Z80, operand: u8) void {
     const old = z80.registers.a;
     const result, const underflowed = @subWithOverflow(z80.registers.a, operand);
 
