@@ -22,14 +22,6 @@ const Clock = struct {
     }
 };
 
-const Register16 = enum {
-    // af,
-    bc,
-    de,
-    hl,
-    sp,
-};
-
 pub const Registers = struct {
     a: u8 = 0,
     b: u8 = 0,
@@ -41,37 +33,12 @@ pub const Registers = struct {
 
     stack_pointer: u16 = 0,
 
-    pub fn set16(self: *Registers, r: Register16, high: u8, low: u8) void {
-        switch (r) {
-            .bc => {
-                self.b = high;
-                self.c = low;
-            },
-            .de => {
-                self.d = high;
-                self.c = low;
-            },
-            .hl => {
-                self.h = high;
-                self.l = low;
-            },
-            .sp => {
-                self.stack_pointer = to16(high, low);
-            },
-        }
-    }
-
-    pub fn read16(self: Registers, r: Register16) u16 {
-        return switch (r) {
-            .bc => to16(self.b, self.c),
-            .de => to16(self.d, self.e),
-            .hl => to16(self.h, self.l),
-            .sp => self.stack_pointer,
-        };
-    }
-
-    inline fn to16(high: u8, low: u8) u16 {
-        return (@as(u16, high) << 8) | low;
+    pub fn read16(
+        self: Registers,
+        comptime high: []const u8,
+        comptime low: []const u8,
+    ) u16 {
+        return to16(@field(self, high), @field(self, low));
     }
 };
 
@@ -116,15 +83,15 @@ fn operate(z80: *Z80, opcode: u8) void {
     switch (opcode) {
         0x00 => {},
 
-        0x01 => z80.load16(.bc),
-        0x11 => z80.load16(.de),
-        0x21 => z80.load16(.hl),
-        0x31 => z80.load16(.sp),
+        0x01 => z80.load16("b", "c"),
+        0x11 => z80.load16("d", "e"),
+        0x21 => z80.load16("h", "l"),
+        0x31 => z80.loadStackPointer(),
 
-        0x02 => z80.loadMemory(.bc, z80.registers.a),
-        0x12 => z80.loadMemory(.de, z80.registers.a),
-        0x22 => z80.loadMemory(.bc, z80.registers.a),
-        0x32 => z80.loadMemory(.bc, z80.registers.a),
+        0x02 => z80.loadMemory("b", "c", z80.registers.a),
+        0x12 => z80.loadMemory("d", "e", z80.registers.a),
+        0x22 => z80.loadMemory("b", "c", z80.registers.a),
+        0x32 => z80.loadMemory("b", "c", z80.registers.a),
 
         0x3C => z80.increment("a"),
         0x04 => z80.increment("b"),
@@ -134,6 +101,10 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x24 => z80.increment("h"),
         0x2C => z80.increment("l"),
         0x34 => z80.incrementHL(),
+        0x03 => z80.increment16("b", "c"),
+        0x13 => z80.increment16("d", "e"),
+        0x23 => z80.increment16("h", "l"),
+        0x33 => z80.incrementStackPointer(),
 
         0x3D => z80.decrement("a"),
         0x05 => z80.decrement("b"),
@@ -143,6 +114,10 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x25 => z80.decrement("h"),
         0x2D => z80.decrement("l"),
         0x35 => z80.decrementHL(),
+        0x0B => z80.decrement16("b", "c"),
+        0x1B => z80.decrement16("d", "e"),
+        0x2B => z80.decrement16("h", "l"),
+        0x3B => z80.decrementStackPointer(),
 
         0x78...0x7F, 0x3E => z80.load8("a", z80.operand8(opcode)),
         0x40...0x47, 0x06 => z80.load8("b", z80.operand8(opcode)),
@@ -151,7 +126,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x58...0x5F, 0x1E => z80.load8("e", z80.operand8(opcode)),
         0x60...0x67, 0x26 => z80.load8("h", z80.operand8(opcode)),
         0x68...0x6F, 0x2E => z80.load8("l", z80.operand8(opcode)),
-        0x70...0x75, 0x77, 0x36 => z80.loadMemory(.hl, z80.operand8(opcode)),
+        0x70...0x75, 0x77, 0x36 => z80.loadMemory("h", "l", z80.operand8(opcode)),
 
         0x76 => z80.halt(),
 
@@ -193,7 +168,7 @@ fn operand8(z80: *Z80, opcode: u8) u8 {
         0x4 => z80.registers.h,
         0x5 => z80.registers.l,
         0x6 => switch (opcode) {
-            0x40...0xBF => z80.readByte(z80.registers.read16(.hl)),
+            0x40...0xBF => z80.readByte(z80.registers.read16("h", "l")),
             else => z80.constant8(),
         },
         else => unreachable,
@@ -207,6 +182,13 @@ fn constant8(z80: *Z80) u8 {
     return value;
 }
 
+fn constant16(z80: *Z80) u16 {
+    const low = z80.constant8();
+    const high = z80.constant8();
+
+    return to16(high, low);
+}
+
 /// TODO
 fn halt(z80: *Z80) void {
     z80.clock.tick();
@@ -218,16 +200,28 @@ fn load8(z80: *Z80, comptime register: []const u8, operand: u8) void {
 }
 
 /// Load the value into the byte pointed to by register
-fn loadMemory(z80: *Z80, register: Register16, operand: u8) void {
-    z80.writeByte(z80.registers.read16(register), operand);
+fn loadMemory(
+    z80: *Z80,
+    comptime high: []const u8,
+    comptime low: []const u8,
+    operand: u8,
+) void {
+    z80.writeByte(z80.registers.read16(high, low), operand);
 }
 
 /// Load the value into the given registers
-fn load16(z80: *Z80, register: Register16) void {
-    const low = z80.constant8();
-    const high = z80.constant8();
+fn load16(
+    z80: *Z80,
+    comptime high: []const u8,
+    comptime low: []const u8,
+) void {
+    @field(z80.registers, low) = z80.constant8();
+    @field(z80.registers, high) = z80.constant8();
+}
 
-    z80.registers.set16(register, high, low);
+/// Load the value into the stack pointer
+fn loadStackPointer(z80: *Z80) void {
+    z80.registers.stack_pointer = z80.constant16();
 }
 
 /// Increment the register by 1
@@ -240,6 +234,39 @@ fn increment(z80: *Z80, comptime register: []const u8) void {
         .carried = z80.flags.carried,
         .was_zero = @field(z80.registers, register) == 0,
     };
+}
+
+fn incrementHL(z80: *Z80) void {
+    const address = z80.registers.read16("h", "l");
+    const old = z80.readByte(address);
+
+    const new = old +% 1;
+
+    z80.flags = .{
+        .half_carried = old & 0xF == 0b1111,
+        .carried = z80.flags.carried,
+        .was_zero = new == 0,
+    };
+
+    z80.writeByte(address, new);
+}
+
+/// Increment the 16 bit register by 1
+fn increment16(
+    z80: *Z80,
+    comptime high: []const u8,
+    comptime low: []const u8,
+) void {
+    @field(z80.registers, low), const overflowed = @addWithOverflow(@field(z80.registers, low), 1);
+
+    @field(z80.registers, high) +%= overflowed;
+
+    z80.clock.tick();
+}
+
+fn incrementStackPointer(z80: *Z80) void {
+    z80.registers.stack_pointer +%= 1;
+    z80.clock.tick();
 }
 
 /// Decrement the register by 1
@@ -255,29 +282,37 @@ fn decrement(z80: *Z80, comptime register: []const u8) void {
     };
 }
 
-fn incrementHL(z80: *Z80) void {
-    var value = z80.readByte(z80.registers.read16(.hl));
-
-    value +%= 1;
-
-    z80.flags = .{
-        .was_zero = value == 0,
-    };
-
-    z80.writeByte(z80.registers.read16(.hl), value);
-}
-
 fn decrementHL(z80: *Z80) void {
-    var value = z80.readByte(z80.registers.read16(.hl));
+    const address = z80.registers.read16("h", "l");
+    const old = z80.readByte(address);
 
-    value -%= 1;
+    const new = old -% 1;
 
     z80.flags = .{
-        .was_zero = value == 0,
+        .half_carried = old & 0xF == 0,
+        .carried = z80.flags.carried,
+        .was_zero = new == 0,
         .subtracted = true,
     };
 
-    z80.writeByte(z80.registers.read16(.hl), value);
+    z80.writeByte(address, new);
+}
+
+fn decrement16(
+    z80: *Z80,
+    comptime high: []const u8,
+    comptime low: []const u8,
+) void {
+    @field(z80.registers, low), const underflowed = @subWithOverflow(@field(z80.registers, low), 1);
+
+    @field(z80.registers, high) -%= underflowed;
+
+    z80.clock.tick();
+}
+
+fn decrementStackPointer(z80: *Z80) void {
+    z80.registers.stack_pointer -%= 1;
+    z80.clock.tick();
 }
 
 /// Add value to A
@@ -311,12 +346,12 @@ fn addWithCarry(z80: *Z80, operand: u8) void {
 /// Put result in A
 fn subtract(z80: *Z80, operand: u8) void {
     const old = z80.registers.a;
-    z80.registers.a, const underflowed = @subWithOverflow(z80.registers.a, operand);
+    z80.registers.a -%= operand;
 
     z80.flags = .{
         .subtracted = true,
         .was_zero = z80.registers.a == 0,
-        .carried = underflowed != 0,
+        .carried = operand > old,
         .half_carried = (old & 0xF) < (operand & 0xF),
     };
 }
@@ -377,6 +412,10 @@ fn compare(z80: *Z80, operand: u8) void {
         .carried = underflowed != 0,
         .half_carried = (old & 0xF) < (operand & 0xF),
     };
+}
+
+inline fn to16(high: u8, low: u8) u16 {
+    return (@as(u16, high) << 8) | low;
 }
 
 test "add constant" {
