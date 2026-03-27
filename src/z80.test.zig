@@ -361,7 +361,7 @@ test "0x36 ld [hl], n8" {
 }
 
 test "0x37 scf" {
-    try runTestsFor("37", 4);
+    try runTestsFor("37", 1);
 }
 
 test "0x38 jr c, e8" {

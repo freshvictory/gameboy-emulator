@@ -134,6 +134,9 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x1F => z80.rotateARightThroughCarry(),
         0x2F => z80.not(),
 
+        0x37 => z80.setCarry(),
+        0x3F => z80.invertCarry(),
+
         0x09 => z80.addToHL(z80.registers.bc()),
         0x19 => z80.addToHL(z80.registers.de()),
         0x29 => z80.addToHL(z80.registers.hl()),
@@ -547,6 +550,22 @@ fn rotateARightThroughCarry(z80: *Z80) void {
     z80.registers.a |= carry_bit << 7;
 
     z80.flags = .{ .carried = lowestBit != 0 };
+}
+
+/// Set the carry flag to true (SCF)
+fn setCarry(z80: *Z80) void {
+    z80.flags = .{
+        .was_zero = z80.flags.was_zero,
+        .carried = true,
+    };
+}
+
+/// Flip the carry flag (CCF)
+fn invertCarry(z80: *Z80) void {
+    z80.flags = .{
+        .was_zero = z80.flags.was_zero,
+        .carried = !z80.flags.carried,
+    };
 }
 
 inline fn to16(high: u8, low: u8) u16 {
