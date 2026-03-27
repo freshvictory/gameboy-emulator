@@ -33,12 +33,21 @@ pub const Registers = struct {
 
     stack_pointer: u16 = 0,
 
-    pub fn read16(
-        self: Registers,
-        comptime high: []const u8,
-        comptime low: []const u8,
-    ) u16 {
-        return to16(@field(self, high), @field(self, low));
+    pub fn bc(self: Registers) u16 {
+        return to16(self.b, self.c);
+    }
+
+    pub fn de(self: Registers) u16 {
+        return to16(self.d, self.e);
+    }
+
+    pub fn hl(self: Registers) u16 {
+        return to16(self.h, self.l);
+    }
+
+    pub fn set_hl(self: *Registers, value: u16) void {
+        self.h = @truncate(value >> 8);
+        self.l = @truncate(value);
     }
 };
 
@@ -88,10 +97,10 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x21 => z80.load16("h", "l"),
         0x31 => z80.loadStackPointer(),
 
-        0x02 => z80.loadMemory("b", "c", z80.registers.a),
-        0x12 => z80.loadMemory("d", "e", z80.registers.a),
-        0x22 => z80.loadMemory("b", "c", z80.registers.a),
-        0x32 => z80.loadMemory("b", "c", z80.registers.a),
+        0x02 => z80.loadMemory(z80.registers.bc(), z80.registers.a),
+        0x12 => z80.loadMemory(z80.registers.de(), z80.registers.a),
+        0x22 => z80.loadAIntoHLAndIncrement(),
+        0x32 => z80.loadAIntoHLAndDecrement(),
 
         0x3C => z80.increment("a"),
         0x04 => z80.increment("b"),
@@ -122,6 +131,11 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x07 => z80.rotateALeft(),
         0x17 => z80.rotateALeftThroughCarry(),
 
+        0x09 => z80.addToHL(z80.registers.bc()),
+        0x19 => z80.addToHL(z80.registers.de()),
+        0x29 => z80.addToHL(z80.registers.hl()),
+        0x39 => z80.addToHL(z80.registers.stack_pointer),
+
         0x78...0x7F, 0x3E => z80.load8("a", z80.operand8(opcode)),
         0x40...0x47, 0x06 => z80.load8("b", z80.operand8(opcode)),
         0x48...0x4F, 0x0E => z80.load8("c", z80.operand8(opcode)),
@@ -129,7 +143,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x58...0x5F, 0x1E => z80.load8("e", z80.operand8(opcode)),
         0x60...0x67, 0x26 => z80.load8("h", z80.operand8(opcode)),
         0x68...0x6F, 0x2E => z80.load8("l", z80.operand8(opcode)),
-        0x70...0x75, 0x77, 0x36 => z80.loadMemory("h", "l", z80.operand8(opcode)),
+        0x70...0x75, 0x77, 0x36 => z80.loadMemory(z80.registers.hl(), z80.operand8(opcode)),
 
         0x76 => z80.halt(),
 
@@ -171,7 +185,7 @@ fn operand8(z80: *Z80, opcode: u8) u8 {
         0x4 => z80.registers.h,
         0x5 => z80.registers.l,
         0x6 => switch (opcode) {
-            0x40...0xBF => z80.readByte(z80.registers.read16("h", "l")),
+            0x40...0xBF => z80.readByte(z80.registers.hl()),
             else => z80.constant8(),
         },
         else => unreachable,
@@ -205,11 +219,10 @@ fn load8(z80: *Z80, comptime register: []const u8, operand: u8) void {
 /// Load the value into the byte pointed to by register
 fn loadMemory(
     z80: *Z80,
-    comptime high: []const u8,
-    comptime low: []const u8,
+    address: u16,
     operand: u8,
 ) void {
-    z80.writeByte(z80.registers.read16(high, low), operand);
+    z80.writeByte(address, operand);
 }
 
 /// Load the value into the given registers
@@ -227,6 +240,24 @@ fn loadStackPointer(z80: *Z80) void {
     z80.registers.stack_pointer = z80.constant16();
 }
 
+fn loadAIntoHLAndIncrement(z80: *Z80) void {
+    const address = z80.registers.hl();
+    z80.writeByte(address, z80.registers.a);
+
+    const newAddress = address +% 1;
+
+    z80.registers.set_hl(newAddress);
+}
+
+fn loadAIntoHLAndDecrement(z80: *Z80) void {
+    const address = z80.registers.hl();
+    z80.writeByte(address, z80.registers.a);
+
+    const newAddress = address -% 1;
+
+    z80.registers.set_hl(newAddress);
+}
+
 /// Increment the register by 1
 fn increment(z80: *Z80, comptime register: []const u8) void {
     const old = @field(z80.registers, register);
@@ -240,7 +271,7 @@ fn increment(z80: *Z80, comptime register: []const u8) void {
 }
 
 fn incrementHL(z80: *Z80) void {
-    const address = z80.registers.read16("h", "l");
+    const address = z80.registers.hl();
     const old = z80.readByte(address);
 
     const new = old +% 1;
@@ -286,7 +317,7 @@ fn decrement(z80: *Z80, comptime register: []const u8) void {
 }
 
 fn decrementHL(z80: *Z80) void {
-    const address = z80.registers.read16("h", "l");
+    const address = z80.registers.hl();
     const old = z80.readByte(address);
 
     const new = old -% 1;
@@ -343,6 +374,25 @@ fn addWithCarry(z80: *Z80, operand: u8) void {
         .half_carried = (operand & 0xF) + (old & 0xF) + carry > 0xF,
         .carried = overflowed != 0 or carry_overflow != 0,
     };
+}
+
+fn addToHL(
+    z80: *Z80,
+    operand: u16,
+) void {
+    const old = z80.registers.hl();
+    const value, const overflowed = @addWithOverflow(old, operand);
+
+    z80.flags = .{
+        .was_zero = z80.flags.was_zero,
+        .half_carried = (old & 0xFFF) + (operand & 0xFFF) > 0xFFF,
+        .carried = overflowed != 0,
+    };
+
+    z80.registers.h = @truncate(value >> 8);
+    z80.registers.l = @truncate(value);
+
+    z80.clock.tick();
 }
 
 /// Subtract value from A
@@ -431,7 +481,7 @@ fn rotateLeft(z80: *Z80, comptime register: []const u8) void {
 
 /// Rotate register left (RLC)
 fn rotateHLLeft(z80: *Z80) void {
-    const address = z80.readByte(z80.registers.read16("h", "l"));
+    const address = z80.readByte(z80.registers.hl());
 
     var value, const overflowed = @shlWithOverflow(z80.registers.a, 1);
 
