@@ -1129,7 +1129,7 @@ test "0xF8 ld hl, sp + e8" {
     try runTestsFor("F8", 3);
 }
 
-test "0xF9 sp, hl" {
+test "0xF9 ld sp, hl" {
     try runTestsFor("F9", 2);
 }
 

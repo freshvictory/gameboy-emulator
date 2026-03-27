@@ -96,11 +96,19 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x11 => z80.load16("d", "e"),
         0x21 => z80.load16("h", "l"),
         0x31 => z80.loadStackPointer(),
+        0xF9 => z80.loadHLIntoStackPointer(),
 
-        0x02 => z80.loadMemory(z80.registers.bc(), z80.registers.a),
-        0x12 => z80.loadMemory(z80.registers.de(), z80.registers.a),
+        0x02 => z80.loadToMemory(z80.registers.bc(), z80.registers.a),
+        0x08 => z80.loadStackPointerInAddress(z80.constant16()),
+        0x0A => z80.loadFromMemory(z80.registers.bc()),
+        0x12 => z80.loadToMemory(z80.registers.de(), z80.registers.a),
+        0x1A => z80.loadFromMemory(z80.registers.de()),
+        0xEA => z80.loadToMemory(z80.constant16(), z80.registers.a),
+        0xFA => z80.loadFromMemory(z80.constant16()),
         0x22 => z80.loadAIntoHLAndIncrement(),
+        0x2A => z80.loadAFromHLAndIncrement(),
         0x32 => z80.loadAIntoHLAndDecrement(),
+        0x3A => z80.loadAFromHLAndDecrement(),
 
         0x3C => z80.increment("a"),
         0x04 => z80.increment("b"),
@@ -149,7 +157,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x58...0x5F, 0x1E => z80.load8("e", z80.operand8(opcode)),
         0x60...0x67, 0x26 => z80.load8("h", z80.operand8(opcode)),
         0x68...0x6F, 0x2E => z80.load8("l", z80.operand8(opcode)),
-        0x70...0x75, 0x77, 0x36 => z80.loadMemory(z80.registers.hl(), z80.operand8(opcode)),
+        0x70...0x75, 0x77, 0x36 => z80.loadToMemory(z80.registers.hl(), z80.operand8(opcode)),
 
         0x76 => z80.halt(),
 
@@ -214,7 +222,7 @@ fn constant16(z80: *Z80) u16 {
 
 /// TODO
 fn halt(z80: *Z80) void {
-    z80.clock.tick();
+    _ = z80;
 }
 
 /// Load the value into the given register
@@ -223,12 +231,22 @@ fn load8(z80: *Z80, comptime register: []const u8, operand: u8) void {
 }
 
 /// Load the value into the byte pointed to by register
-fn loadMemory(
-    z80: *Z80,
-    address: u16,
-    operand: u8,
-) void {
+fn loadToMemory(z80: *Z80, address: u16, operand: u8) void {
     z80.writeByte(address, operand);
+}
+
+fn loadFromMemory(z80: *Z80, address: u16) void {
+    z80.registers.a = z80.readByte(address);
+}
+
+/// Load the lower half into address
+/// and the higher half into address + 1
+fn loadStackPointerInAddress(z80: *Z80, address: u16) void {
+    const low: u8 = @truncate(z80.registers.stack_pointer);
+    const high: u8 = @truncate(z80.registers.stack_pointer >> 8);
+
+    z80.writeByte(address, low);
+    z80.writeByte(address +% 1, high);
 }
 
 /// Load the value into the given registers
@@ -246,6 +264,12 @@ fn loadStackPointer(z80: *Z80) void {
     z80.registers.stack_pointer = z80.constant16();
 }
 
+/// Load the value into the stack pointer
+fn loadHLIntoStackPointer(z80: *Z80) void {
+    z80.registers.stack_pointer = z80.registers.hl();
+    z80.clock.tick();
+}
+
 fn loadAIntoHLAndIncrement(z80: *Z80) void {
     const address = z80.registers.hl();
     z80.writeByte(address, z80.registers.a);
@@ -258,6 +282,24 @@ fn loadAIntoHLAndIncrement(z80: *Z80) void {
 fn loadAIntoHLAndDecrement(z80: *Z80) void {
     const address = z80.registers.hl();
     z80.writeByte(address, z80.registers.a);
+
+    const newAddress = address -% 1;
+
+    z80.registers.set_hl(newAddress);
+}
+
+fn loadAFromHLAndIncrement(z80: *Z80) void {
+    const address = z80.registers.hl();
+    z80.registers.a = z80.readByte(address);
+
+    const newAddress = address +% 1;
+
+    z80.registers.set_hl(newAddress);
+}
+
+fn loadAFromHLAndDecrement(z80: *Z80) void {
+    const address = z80.registers.hl();
+    z80.registers.a = z80.readByte(address);
 
     const newAddress = address -% 1;
 
