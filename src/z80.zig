@@ -129,7 +129,10 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x3B => z80.decrementStackPointer(),
 
         0x07 => z80.rotateALeft(),
+        0x0F => z80.rotateARight(),
         0x17 => z80.rotateALeftThroughCarry(),
+        0x1F => z80.rotateARightThroughCarry(),
+        0x2F => z80.not(),
 
         0x09 => z80.addToHL(z80.registers.bc()),
         0x19 => z80.addToHL(z80.registers.de()),
@@ -452,6 +455,13 @@ fn xor(z80: *Z80, operand: u8) void {
     };
 }
 
+/// Bitwise not of A (CPL)
+fn not(z80: *Z80) void {
+    z80.registers.a = ~z80.registers.a;
+    z80.flags.subtracted = true;
+    z80.flags.half_carried = true;
+}
+
 /// Compare value to A
 /// If equal, flag zero
 /// If register > A, flag carry
@@ -513,6 +523,30 @@ fn rotateALeftThroughCarry(z80: *Z80) void {
     z80.flags = .{
         .carried = overflowed != 0,
     };
+}
+
+/// Rotate A right (RCLA)
+fn rotateARight(z80: *Z80) void {
+    const lowestBit: u8 = z80.registers.a & 1;
+
+    z80.registers.a >>= 1;
+
+    z80.registers.a |= lowestBit << 7;
+
+    z80.flags = .{ .carried = lowestBit != 0 };
+}
+
+/// Rotate A right through carry (RRA)
+fn rotateARightThroughCarry(z80: *Z80) void {
+    const lowestBit = z80.registers.a & 1;
+
+    z80.registers.a >>= 1;
+
+    const carry_bit: u8 = if (z80.flags.carried) 1 else 0;
+
+    z80.registers.a |= carry_bit << 7;
+
+    z80.flags = .{ .carried = lowestBit != 0 };
 }
 
 inline fn to16(high: u8, low: u8) u16 {
