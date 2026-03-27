@@ -165,7 +165,7 @@ test "0x06 ld b, n8" {
     try runTestsFor("06", 2);
 }
 
-test "0x07 rcla" {
+test "0x07 rlca" {
     try runTestsFor("07", 1);
 }
 

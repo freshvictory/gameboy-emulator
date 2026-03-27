@@ -119,6 +119,9 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x2B => z80.decrement16("h", "l"),
         0x3B => z80.decrementStackPointer(),
 
+        0x07 => z80.rotateALeft(),
+        0x17 => z80.rotateALeftThroughCarry(),
+
         0x78...0x7F, 0x3E => z80.load8("a", z80.operand8(opcode)),
         0x40...0x47, 0x06 => z80.load8("b", z80.operand8(opcode)),
         0x48...0x4F, 0x0E => z80.load8("c", z80.operand8(opcode)),
@@ -411,6 +414,54 @@ fn compare(z80: *Z80, operand: u8) void {
         .was_zero = result == 0,
         .carried = underflowed != 0,
         .half_carried = (old & 0xF) < (operand & 0xF),
+    };
+}
+
+/// Rotate register left (RLC)
+fn rotateLeft(z80: *Z80, comptime register: []const u8) void {
+    @field(z80.registers, register), const overflowed = @shlWithOverflow(z80.registers.a, 1);
+
+    @field(z80.registers, register) += overflowed;
+
+    z80.flags = .{
+        .carried = overflowed != 0,
+        .was_zero = @field(z80.registers, register) == 0,
+    };
+}
+
+/// Rotate register left (RLC)
+fn rotateHLLeft(z80: *Z80) void {
+    const address = z80.readByte(z80.registers.read16("h", "l"));
+
+    var value, const overflowed = @shlWithOverflow(z80.registers.a, 1);
+
+    value += overflowed;
+
+    z80.flags = .{
+        .carried = overflowed != 0,
+        .was_zero = value == 0,
+    };
+
+    z80.writeByte(address, value);
+}
+
+/// Rotate A left (RCLA)
+fn rotateALeft(z80: *Z80) void {
+    z80.registers.a, const overflowed = @shlWithOverflow(z80.registers.a, 1);
+
+    z80.registers.a += overflowed;
+
+    z80.flags = .{ .carried = overflowed != 0 };
+}
+
+/// Rotate A left through carry (RLA)
+fn rotateALeftThroughCarry(z80: *Z80) void {
+    z80.registers.a, const overflowed = @shlWithOverflow(z80.registers.a, 1);
+
+    z80.registers.a += if (z80.flags.carried) 1 else 0;
+
+    z80.flags = .{
+        .carried = overflowed != 0,
     };
 }
 
