@@ -178,9 +178,11 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xC1 => z80.pop("b", "c"),
         0xD1 => z80.pop("d", "e"),
         0xE1 => z80.pop("h", "l"),
-        0xC5 => z80.push("b", "c"),
-        0xD5 => z80.push("d", "e"),
-        0xE5 => z80.push("h", "l"),
+        0xF1 => z80.popAF(),
+        0xC5 => z80.push(z80.registers.b, z80.registers.c),
+        0xD5 => z80.push(z80.registers.d, z80.registers.e),
+        0xE5 => z80.push(z80.registers.h, z80.registers.l),
+        0xF5 => z80.push(z80.registers.a, z80.flags.int()),
 
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
@@ -694,13 +696,22 @@ fn pop(z80: *Z80, comptime high: []const u8, comptime low: []const u8) void {
     z80.registers.stack_pointer +%= 1;
 }
 
+/// Pop a 16 bit value from the stack to set flags
+fn popAF(z80: *Z80) void {
+    z80.flags = Flags.from(z80.readByte(z80.registers.stack_pointer));
+    z80.registers.stack_pointer +%= 1;
+
+    z80.registers.a = z80.readByte(z80.registers.stack_pointer);
+    z80.registers.stack_pointer +%= 1;
+}
+
 /// Push a 16-bit value onto the stack
-fn push(z80: *Z80, comptime high: []const u8, comptime low: []const u8) void {
+fn push(z80: *Z80, high: u8, low: u8) void {
     z80.registers.stack_pointer -%= 1;
-    z80.writeByte(z80.registers.stack_pointer, @field(z80.registers, high));
+    z80.writeByte(z80.registers.stack_pointer, high);
 
     z80.registers.stack_pointer -%= 1;
-    z80.writeByte(z80.registers.stack_pointer, @field(z80.registers, low));
+    z80.writeByte(z80.registers.stack_pointer, low);
 
     z80.clock.tick();
 }
