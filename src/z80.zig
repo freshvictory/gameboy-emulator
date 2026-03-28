@@ -170,6 +170,8 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xB0...0xB7, 0xF6 => z80.@"or"(z80.operand8(opcode)),
         0xB8...0xBF, 0xFE => z80.compare(z80.operand8(opcode)),
 
+        0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
+
         else => {},
     }
 }
@@ -220,6 +222,10 @@ fn constant16(z80: *Z80) u16 {
     return to16(high, low);
 }
 
+fn signed8(z80: *Z80) i8 {
+    return @bitCast(z80.constant8());
+}
+
 /// TODO
 fn halt(z80: *Z80) void {
     _ = z80;
@@ -267,6 +273,30 @@ fn loadStackPointer(z80: *Z80) void {
 /// Load the value into the stack pointer
 fn loadHLIntoStackPointer(z80: *Z80) void {
     z80.registers.stack_pointer = z80.registers.hl();
+    z80.clock.tick();
+}
+
+/// Add the signed integer with SP and store in HL
+fn addToStackPointerAndLoad(z80: *Z80, operand: i8) void {
+    const stack_pointer_low: u8 = @truncate(z80.registers.stack_pointer);
+
+    const offset: u16 = @bitCast(@as(i16, operand));
+    const result: u16 = z80.registers.stack_pointer +% offset;
+
+    // Flags are based on unsigned addition of
+    // the low byte of SP and the raw unsigned operand byte
+    const raw_operand: u8 = @bitCast(operand);
+    _, const overflowed = @addWithOverflow(stack_pointer_low, raw_operand);
+    const half_carried = ((stack_pointer_low & 0xF) + (raw_operand & 0xF)) > 0xF;
+
+    z80.registers.h = @truncate(result >> 8);
+    z80.registers.l = @truncate(result);
+
+    z80.flags = .{
+        .carried = overflowed != 0,
+        .half_carried = half_carried,
+    };
+
     z80.clock.tick();
 }
 
