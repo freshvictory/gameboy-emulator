@@ -164,6 +164,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x68...0x6F, 0x2E => z80.load8("l", z80.operand8(opcode)),
         0x70...0x75, 0x77, 0x36 => z80.loadToMemory(z80.registers.hl(), z80.operand8(opcode)),
 
+        0x10 => z80.stop(),
         0x76 => z80.halt(),
 
         0x27 => z80.decimalAdjustAccumulator(),
@@ -232,7 +233,10 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xF3 => z80.disableInterrupts(),
         0xFB => z80.enableInterrupts(),
 
-        else => {},
+        0xCB => {}, // TODO: prefix
+
+        // Undefined instructions
+        0xD3, 0xDB, 0xDD, 0xE3, 0xE4, 0xEB, 0xEC, 0xED, 0xF4, 0xFC, 0xFD => {},
     }
 }
 
@@ -292,7 +296,14 @@ inline fn highAddress(value: u8) u16 {
 
 /// TODO
 fn halt(z80: *Z80) void {
-    _ = z80;
+    z80.clock.tick();
+    z80.clock.tick();
+}
+
+/// TODO
+fn stop(z80: *Z80) void {
+    z80.clock.tick();
+    z80.clock.tick();
 }
 
 /// Load the value into the given register
