@@ -185,10 +185,30 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xF5 => z80.push(z80.registers.a, z80.flags.int()),
 
         0x18 => z80.jumpRelative(z80.signed8()),
+        0x20 => z80.jumpRelativeIf(!z80.flags.was_zero, z80.signed8()),
+        0x28 => z80.jumpRelativeIf(z80.flags.was_zero, z80.signed8()),
+        0x30 => z80.jumpRelativeIf(!z80.flags.carried, z80.signed8()),
+        0x38 => z80.jumpRelativeIf(z80.flags.carried, z80.signed8()),
+
         0xC3 => z80.jump(z80.constant16()),
-        0xC9 => z80.@"return"(),
-        0xCD => z80.call(z80.constant16()),
+        0xC2 => z80.jumpIf(!z80.flags.was_zero, z80.constant16()),
+        0xCA => z80.jumpIf(z80.flags.was_zero, z80.constant16()),
+        0xD2 => z80.jumpIf(!z80.flags.carried, z80.constant16()),
+        0xDA => z80.jumpIf(z80.flags.carried, z80.constant16()),
+
         0xE9 => z80.jumpHL(),
+
+        0xCD => z80.call(z80.constant16()),
+        0xC4 => z80.callIf(!z80.flags.was_zero, z80.constant16()),
+        0xCC => z80.callIf(z80.flags.was_zero, z80.constant16()),
+        0xD4 => z80.callIf(!z80.flags.carried, z80.constant16()),
+        0xDC => z80.callIf(z80.flags.carried, z80.constant16()),
+
+        0xC9 => z80.@"return"(),
+        0xC0 => z80.returnIf(!z80.flags.was_zero),
+        0xC8 => z80.returnIf(z80.flags.was_zero),
+        0xD0 => z80.returnIf(!z80.flags.carried),
+        0xD8 => z80.returnIf(z80.flags.carried),
 
         // RST (restart) instructions
         0xC7 => z80.call(0x00),
@@ -757,11 +777,23 @@ fn jumpRelative(z80: *Z80, offset: i8) void {
     z80.jump(result);
 }
 
+fn jumpIf(z80: *Z80, condition: bool, address: u16) void {
+    if (condition) z80.jump(address);
+}
+
+fn jumpRelativeIf(z80: *Z80, condition: bool, offset: i8) void {
+    if (condition) z80.jumpRelative(offset);
+}
+
 /// Call a subroutine
 fn call(z80: *Z80, address: u16) void {
     const high, const low = from16(z80.program_counter);
     z80.push(high, low);
     z80.program_counter = address;
+}
+
+fn callIf(z80: *Z80, condition: bool, address: u16) void {
+    if (condition) z80.call(address);
 }
 
 /// Return from a subroutine
@@ -775,6 +807,12 @@ fn @"return"(z80: *Z80) void {
     z80.program_counter = to16(high, low);
 
     z80.clock.tick();
+}
+
+fn returnIf(z80: *Z80, condition: bool) void {
+    z80.clock.tick();
+
+    if (condition) z80.@"return"();
 }
 
 // TODO

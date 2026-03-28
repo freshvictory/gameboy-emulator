@@ -330,7 +330,7 @@ test "0x2F cpl" {
     try runTestsFor("2F");
 }
 
-test "0x30 jr nz, e8" {
+test "0x30 jr nc, e8" {
     try runTestsFor("30");
 }
 
