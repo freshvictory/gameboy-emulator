@@ -189,6 +189,16 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xCD => z80.call(z80.constant16()),
         0xE9 => z80.jumpHL(),
 
+        // RST (restart) instructions
+        0xC7 => z80.call(0x00),
+        0xCF => z80.call(0x08),
+        0xD7 => z80.call(0x10),
+        0xDF => z80.call(0x18),
+        0xE7 => z80.call(0x20),
+        0xEF => z80.call(0x28),
+        0xF7 => z80.call(0x30),
+        0xFF => z80.call(0x38),
+
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
