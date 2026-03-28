@@ -175,6 +175,13 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xB0...0xB7, 0xF6 => z80.@"or"(z80.operand8(opcode)),
         0xB8...0xBF, 0xFE => z80.compare(z80.operand8(opcode)),
 
+        0xC1 => z80.pop("b", "c"),
+        0xD1 => z80.pop("d", "e"),
+        0xE1 => z80.pop("h", "l"),
+        0xC5 => z80.push("b", "c"),
+        0xD5 => z80.push("d", "e"),
+        0xE5 => z80.push("h", "l"),
+
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
@@ -676,6 +683,26 @@ fn invertCarry(z80: *Z80) void {
         .was_zero = z80.flags.was_zero,
         .carried = !z80.flags.carried,
     };
+}
+
+/// Pop a 16-bit value from the stack
+fn pop(z80: *Z80, comptime high: []const u8, comptime low: []const u8) void {
+    @field(z80.registers, low) = z80.readByte(z80.registers.stack_pointer);
+    z80.registers.stack_pointer +%= 1;
+
+    @field(z80.registers, high) = z80.readByte(z80.registers.stack_pointer);
+    z80.registers.stack_pointer +%= 1;
+}
+
+/// Push a 16-bit value onto the stack
+fn push(z80: *Z80, comptime high: []const u8, comptime low: []const u8) void {
+    z80.registers.stack_pointer -%= 1;
+    z80.writeByte(z80.registers.stack_pointer, @field(z80.registers, high));
+
+    z80.registers.stack_pointer -%= 1;
+    z80.writeByte(z80.registers.stack_pointer, @field(z80.registers, low));
+
+    z80.clock.tick();
 }
 
 inline fn to16(high: u8, low: u8) u16 {
