@@ -184,6 +184,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xE5 => z80.push(z80.registers.h, z80.registers.l),
         0xF5 => z80.push(z80.registers.a, z80.flags.int()),
 
+        0x18 => z80.jumpRelative(z80.signed8()),
         0xC3 => z80.jump(z80.constant16()),
         0xC9 => z80.@"return"(),
         0xCD => z80.call(z80.constant16()),
@@ -739,6 +740,14 @@ fn jump(z80: *Z80, address: u16) void {
 
 fn jumpHL(z80: *Z80) void {
     z80.program_counter = z80.registers.hl();
+}
+
+/// Jump to address specified by the given offset
+/// from the program counter
+fn jumpRelative(z80: *Z80, offset: i8) void {
+    const result, _, _ = addSigned(z80.program_counter, offset);
+
+    z80.jump(result);
 }
 
 /// Call a subroutine
