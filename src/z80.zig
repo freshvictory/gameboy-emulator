@@ -175,6 +175,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xB0...0xB7, 0xF6 => z80.@"or"(z80.operand8(opcode)),
         0xB8...0xBF, 0xFE => z80.compare(z80.operand8(opcode)),
 
+        0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
         else => {},
@@ -285,24 +286,52 @@ fn loadHLIntoStackPointer(z80: *Z80) void {
     z80.clock.tick();
 }
 
-/// Add the signed integer with SP and store in HL
-fn addToStackPointerAndLoad(z80: *Z80, operand: i8) void {
-    const stack_pointer_low: u8 = @truncate(z80.registers.stack_pointer);
+/// Add a signed value to an unsigned one.
+/// Return the result plus carried and half_carried signals.
+fn addSigned(value: u16, operand: i8) struct { u16, bool, bool } {
+    const low: u8 = @truncate(value);
 
     const offset: u16 = @bitCast(@as(i16, operand));
-    const result: u16 = z80.registers.stack_pointer +% offset;
+    const result = value +% offset;
 
     // Flags are based on unsigned addition of
     // the low byte of SP and the raw unsigned operand byte
     const raw_operand: u8 = @bitCast(operand);
-    _, const overflowed = @addWithOverflow(stack_pointer_low, raw_operand);
-    const half_carried = ((stack_pointer_low & 0xF) + (raw_operand & 0xF)) > 0xF;
+    _, const overflowed = @addWithOverflow(low, raw_operand);
+    const half_carried = ((low & 0xF) + (raw_operand & 0xF)) > 0xF;
+
+    return .{ result, overflowed != 0, half_carried };
+}
+
+fn addToStackPointer(z80: *Z80, operand: i8) void {
+    const result, const carried, const half_carried = addSigned(
+        z80.registers.stack_pointer,
+        operand,
+    );
+
+    z80.registers.stack_pointer = result;
+
+    z80.flags = .{
+        .carried = carried,
+        .half_carried = half_carried,
+    };
+
+    z80.clock.tick();
+    z80.clock.tick();
+}
+
+/// Add the signed integer with SP and store in HL
+fn addToStackPointerAndLoad(z80: *Z80, operand: i8) void {
+    const result, const carried, const half_carried = addSigned(
+        z80.registers.stack_pointer,
+        operand,
+    );
 
     z80.registers.h = @truncate(result >> 8);
     z80.registers.l = @truncate(result);
 
     z80.flags = .{
-        .carried = overflowed != 0,
+        .carried = carried,
         .half_carried = half_carried,
     };
 
