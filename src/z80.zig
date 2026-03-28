@@ -203,6 +203,13 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
+        0xD9 => {
+            z80.@"return"();
+            z80.enableInterrupts();
+        },
+        0xF3 => z80.disableInterrupts(),
+        0xFB => z80.enableInterrupts(),
+
         else => {},
     }
 }
@@ -768,6 +775,16 @@ fn @"return"(z80: *Z80) void {
     z80.program_counter = to16(high, low);
 
     z80.clock.tick();
+}
+
+// TODO
+fn enableInterrupts(z80: *Z80) void {
+    _ = z80;
+}
+
+// TODO
+fn disableInterrupts(z80: *Z80) void {
+    _ = z80;
 }
 
 inline fn to16(high: u8, low: u8) u16 {
