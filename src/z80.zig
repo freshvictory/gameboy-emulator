@@ -166,6 +166,8 @@ fn operate(z80: *Z80, opcode: u8) void {
 
         0x76 => z80.halt(),
 
+        0x27 => z80.decimalAdjustAccumulator(),
+
         0x80...0x87, 0xC6 => z80.add(z80.operand8(opcode)),
         0x88...0x8F, 0xCE => z80.addWithCarry(z80.operand8(opcode)),
         0x90...0x97, 0xD6 => z80.subtract(z80.operand8(opcode)),
@@ -515,6 +517,31 @@ fn decrement16(
 fn decrementStackPointer(z80: *Z80) void {
     z80.registers.stack_pointer -%= 1;
     z80.clock.tick();
+}
+
+/// Adjust result of arithmetic to be binary-coded decimal
+fn decimalAdjustAccumulator(z80: *Z80) void {
+    if (z80.flags.subtracted) {
+        if (z80.flags.half_carried) {
+            z80.registers.a -%= 0x6;
+        }
+        if (z80.flags.carried) {
+            z80.registers.a -%= 0x60;
+        }
+    } else {
+        const x = z80.registers.a & 0xF > 0x9;
+        const y = z80.registers.a > 0x99;
+        if (z80.flags.half_carried or x) {
+            z80.registers.a +%= 0x6;
+        }
+        if (z80.flags.carried or y) {
+            z80.registers.a +%= 0x60;
+            z80.flags.carried = true;
+        }
+    }
+
+    z80.flags.was_zero = z80.registers.a == 0;
+    z80.flags.half_carried = false;
 }
 
 /// Add value to A
