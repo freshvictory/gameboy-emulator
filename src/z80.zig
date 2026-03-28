@@ -184,6 +184,11 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xE5 => z80.push(z80.registers.h, z80.registers.l),
         0xF5 => z80.push(z80.registers.a, z80.flags.int()),
 
+        0xC3 => z80.jump(z80.constant16()),
+        0xC9 => z80.@"return"(),
+        0xCD => z80.call(z80.constant16()),
+        0xE9 => z80.jumpHL(),
+
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
@@ -716,8 +721,45 @@ fn push(z80: *Z80, high: u8, low: u8) void {
     z80.clock.tick();
 }
 
+/// Set the program counter to the given address
+fn jump(z80: *Z80, address: u16) void {
+    z80.program_counter = address;
+    z80.clock.tick();
+}
+
+fn jumpHL(z80: *Z80) void {
+    z80.program_counter = z80.registers.hl();
+}
+
+/// Call a subroutine
+fn call(z80: *Z80, address: u16) void {
+    const high, const low = from16(z80.program_counter);
+    z80.push(high, low);
+    z80.program_counter = address;
+}
+
+/// Return from a subroutine
+fn @"return"(z80: *Z80) void {
+    const low = z80.readByte(z80.registers.stack_pointer);
+    z80.registers.stack_pointer +%= 1;
+
+    const high = z80.readByte(z80.registers.stack_pointer);
+    z80.registers.stack_pointer +%= 1;
+
+    z80.program_counter = to16(high, low);
+
+    z80.clock.tick();
+}
+
 inline fn to16(high: u8, low: u8) u16 {
     return (@as(u16, high) << 8) | low;
+}
+
+inline fn from16(value: u16) struct { u8, u8 } {
+    const high: u8 = @truncate(value >> 8);
+    const low: u8 = @truncate(value);
+
+    return .{ high, low };
 }
 
 test "add constant" {
