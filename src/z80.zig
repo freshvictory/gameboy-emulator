@@ -110,6 +110,11 @@ fn operate(z80: *Z80, opcode: u8) void {
         0x32 => z80.loadAIntoHLAndDecrement(),
         0x3A => z80.loadAFromHLAndDecrement(),
 
+        0xE0 => z80.loadToMemory(highAddress(z80.constant8()), z80.registers.a),
+        0xE2 => z80.loadToMemory(highAddress(z80.registers.c), z80.registers.a),
+        0xF0 => z80.loadFromMemory(highAddress(z80.constant8())),
+        0xF2 => z80.loadFromMemory(highAddress(z80.registers.c)),
+
         0x3C => z80.increment("a"),
         0x04 => z80.increment("b"),
         0x0C => z80.increment("c"),
@@ -224,6 +229,10 @@ fn constant16(z80: *Z80) u16 {
 
 fn signed8(z80: *Z80) i8 {
     return @bitCast(z80.constant8());
+}
+
+inline fn highAddress(value: u8) u16 {
+    return 0xFF00 + @as(u16, value);
 }
 
 /// TODO
