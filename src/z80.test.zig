@@ -1137,3 +1137,258 @@ test "0xFE cp a, n8" {
 test "0xFF rst $38" {
     try runTestsFor("FF");
 }
+
+test "0xCB 0x00 rlc b" {
+    try runTestsFor("CB 00");
+}
+test "0xCB 0x01 rlc c" {
+    try runTestsFor("CB 01");
+}
+
+test "0xCB 0x02 rlc d" {
+    try runTestsFor("CB 02");
+}
+
+test "0xCB 0x03 rlc e" {
+    try runTestsFor("CB 03");
+}
+
+test "0xCB 0x04 rlc h" {
+    try runTestsFor("CB 04");
+}
+
+test "0xCB 0x05 rlc l" {
+    try runTestsFor("CB 05");
+}
+
+test "0xCB 0x06 rlc [hl]" {
+    try runTestsFor("CB 06");
+}
+
+test "0xCB 0x07 rlc a" {
+    try runTestsFor("CB 07");
+}
+
+test "0xCB 0x08 rrc b" {
+    try runTestsFor("CB 08");
+}
+
+test "0xCB 0x09 rrc c" {
+    try runTestsFor("CB 09");
+}
+
+test "0xCB 0x0A rrc d" {
+    try runTestsFor("CB 0A");
+}
+
+test "0xCB 0x0B rrc e" {
+    try runTestsFor("CB 0B");
+}
+
+test "0xCB 0x0C rrc h" {
+    try runTestsFor("CB 0C");
+}
+
+test "0xCB 0x0D rrc l" {
+    try runTestsFor("CB 0D");
+}
+
+test "0xCB 0x0E rrc [hl]" {
+    try runTestsFor("CB 0E");
+}
+
+test "0xCB 0x0F rrc a" {
+    try runTestsFor("CB 0F");
+}
+
+test "0xCB 0x10 rl b" {
+    try runTestsFor("CB 10");
+}
+
+test "0xCB 0x11 rl c" {
+    try runTestsFor("CB 11");
+}
+
+test "0xCB 0x12 rl d" {
+    try runTestsFor("CB 12");
+}
+
+test "0xCB 0x13 rl e" {
+    try runTestsFor("CB 13");
+}
+
+test "0xCB 0x14 rl h" {
+    try runTestsFor("CB 14");
+}
+
+test "0xCB 0x15 rl l" {
+    try runTestsFor("CB 15");
+}
+
+test "0xCB 0x16 rl [hl]" {
+    try runTestsFor("CB 16");
+}
+
+test "0xCB 0x17 rl a" {
+    try runTestsFor("CB 17");
+}
+
+test "0xCB 0x18 rr b" {
+    try runTestsFor("CB 18");
+}
+
+test "0xCB 0x19 rr c" {
+    try runTestsFor("CB 19");
+}
+
+test "0xCB 0x1A rr d" {
+    try runTestsFor("CB 1A");
+}
+
+test "0xCB 0x1B rr e" {
+    try runTestsFor("CB 1B");
+}
+
+test "0xCB 0x1C rr h" {
+    try runTestsFor("CB 1C");
+}
+
+test "0xCB 0x1D rr l" {
+    try runTestsFor("CB 1D");
+}
+
+test "0xCB 0x1E rr [hl]" {
+    try runTestsFor("CB 1E");
+}
+
+test "0xCB 0x1F rr a" {
+    try runTestsFor("CB 1F");
+}
+
+test "0xCB 0x20 sla b" {
+    try runTestsFor("CB 20");
+}
+
+test "0xCB 0x21 sla c" {
+    try runTestsFor("CB 21");
+}
+
+test "0xCB 0x22 sla d" {
+    try runTestsFor("CB 22");
+}
+
+test "0xCB 0x23 sla e" {
+    try runTestsFor("CB 23");
+}
+
+test "0xCB 0x24 sla h" {
+    try runTestsFor("CB 24");
+}
+
+test "0xCB 0x25 sla l" {
+    try runTestsFor("CB 25");
+}
+
+test "0xCB 0x26 sla [hl]" {
+    try runTestsFor("CB 26");
+}
+
+test "0xCB 0x27 sla a" {
+    try runTestsFor("CB 27");
+}
+
+test "0xCB 0x28 sra b" {
+    try runTestsFor("CB 28");
+}
+
+test "0xCB 0x29 sra c" {
+    try runTestsFor("CB 29");
+}
+
+test "0xCB 0x2A sra d" {
+    try runTestsFor("CB 2A");
+}
+
+test "0xCB 0x2B sra e" {
+    try runTestsFor("CB 2B");
+}
+
+test "0xCB 0x2C sra h" {
+    try runTestsFor("CB 2C");
+}
+
+test "0xCB 0x2D sra l" {
+    try runTestsFor("CB 2D");
+}
+
+test "0xCB 0x2E sra [hl]" {
+    try runTestsFor("CB 2E");
+}
+
+test "0xCB 0x2F sra a" {
+    try runTestsFor("CB 2F");
+}
+
+test "0xCB 0x30 swap b" {
+    try runTestsFor("CB 30");
+}
+
+test "0xCB 0x31 swap c" {
+    try runTestsFor("CB 31");
+}
+
+test "0xCB 0x32 swap d" {
+    try runTestsFor("CB 32");
+}
+
+test "0xCB 0x33 swap e" {
+    try runTestsFor("CB 33");
+}
+
+test "0xCB 0x34 swap h" {
+    try runTestsFor("CB 34");
+}
+
+test "0xCB 0x35 swap l" {
+    try runTestsFor("CB 35");
+}
+
+test "0xCB 0x36 swap [hl]" {
+    try runTestsFor("CB 36");
+}
+
+test "0xCB 0x37 swap a" {
+    try runTestsFor("CB 37");
+}
+
+test "0xCB 0x38 srl b" {
+    try runTestsFor("CB 38");
+}
+
+test "0xCB 0x39 srl c" {
+    try runTestsFor("CB 39");
+}
+
+test "0xCB 0x3A srl d" {
+    try runTestsFor("CB 3A");
+}
+
+test "0xCB 0x3B srl e" {
+    try runTestsFor("CB 3B");
+}
+
+test "0xCB 0x3C srl h" {
+    try runTestsFor("CB 3C");
+}
+
+test "0xCB 0x3D srl l" {
+    try runTestsFor("CB 3D");
+}
+
+test "0xCB 0x3E srl [hl]" {
+    try runTestsFor("CB 3E");
+}
+
+test "0xCB 0x3F srl a" {
+    try runTestsFor("CB 3F");
+}

@@ -233,11 +233,31 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xF3 => z80.disableInterrupts(),
         0xFB => z80.enableInterrupts(),
 
-        0xCB => {}, // TODO: prefix
+        0xCB => z80.operatePrefixed(z80.constant8()),
 
         // Undefined instructions
         0xD3, 0xDB, 0xDD, 0xE3, 0xE4, 0xEB, 0xEC, 0xED, 0xF4, 0xFC, 0xFD => {},
     }
+}
+
+fn operatePrefixed(z80: *Z80, opcode: u8) void {
+    const operand = z80.operandPrefixed(opcode);
+
+    const result, const flags = switch (opcode) {
+        0x00...0x07 => rotateLeft(operand),
+        0x08...0x0F => rotateRight(operand),
+        0x10...0x17 => rotateLeftThroughCarry(z80.flags, operand),
+        0x18...0x1F => rotateRightThroughCarry(z80.flags, operand),
+        0x20...0x27 => shiftLeft(operand),
+        0x28...0x2F => shiftRightArithmetically(operand),
+        0x30...0x37 => swap(operand),
+        0x38...0x3F => shiftRightLogically(operand),
+
+        else => .{ 0, z80.flags },
+    };
+
+    z80.setPrefixedResult(opcode, result);
+    z80.flags = flags;
 }
 
 fn writeByte(z80: *Z80, address: u16, value: u8) void {
@@ -248,6 +268,36 @@ fn writeByte(z80: *Z80, address: u16, value: u8) void {
 fn readByte(z80: *Z80, address: u16) u8 {
     z80.clock.tick();
     return z80.mmu[address];
+}
+
+fn operandPrefixed(z80: *Z80, opcode: u8) u8 {
+    // The lower nibble, repeated twice as there are 8
+    return switch ((opcode & 0x0F) % 0x08) {
+        0x7 => z80.registers.a,
+        0x0 => z80.registers.b,
+        0x1 => z80.registers.c,
+        0x2 => z80.registers.d,
+        0x3 => z80.registers.e,
+        0x4 => z80.registers.h,
+        0x5 => z80.registers.l,
+        0x6 => z80.readByte(z80.registers.hl()),
+        else => unreachable,
+    };
+}
+
+fn setPrefixedResult(z80: *Z80, opcode: u8, result: u8) void {
+    // The lower nibble, repeated twice as there are 8
+    return switch ((opcode & 0x0F) % 0x08) {
+        0x7 => z80.registers.a = result,
+        0x0 => z80.registers.b = result,
+        0x1 => z80.registers.c = result,
+        0x2 => z80.registers.d = result,
+        0x3 => z80.registers.e = result,
+        0x4 => z80.registers.h = result,
+        0x5 => z80.registers.l = result,
+        0x6 => z80.writeByte(z80.registers.hl(), result),
+        else => unreachable,
+    };
 }
 
 /// Given an opcode get its 8 bit operand value.
@@ -680,32 +730,34 @@ fn compare(z80: *Z80, operand: u8) void {
     };
 }
 
-/// Rotate register left (RLC)
-fn rotateLeft(z80: *Z80, comptime register: []const u8) void {
-    @field(z80.registers, register), const overflowed = @shlWithOverflow(z80.registers.a, 1);
+const PrefixResult = struct { u8, Flags };
 
-    @field(z80.registers, register) += overflowed;
+/// Rotate value left (RLC)
+fn rotateLeft(operand: u8) PrefixResult {
+    var result, const overflowed = @shlWithOverflow(operand, 1);
 
-    z80.flags = .{
-        .carried = overflowed != 0,
-        .was_zero = @field(z80.registers, register) == 0,
+    result += overflowed;
+
+    return .{
+        result,
+        .{
+            .carried = overflowed != 0,
+            .was_zero = result == 0,
+        },
     };
 }
 
-/// Rotate register left (RLC)
-fn rotateHLLeft(z80: *Z80) void {
-    const address = z80.readByte(z80.registers.hl());
+/// Shift value left (SLA)
+fn shiftLeft(operand: u8) PrefixResult {
+    const result, const overflowed = @shlWithOverflow(operand, 1);
 
-    var value, const overflowed = @shlWithOverflow(z80.registers.a, 1);
-
-    value += overflowed;
-
-    z80.flags = .{
-        .carried = overflowed != 0,
-        .was_zero = value == 0,
+    return .{
+        result,
+        .{
+            .carried = overflowed != 0,
+            .was_zero = result == 0,
+        },
     };
-
-    z80.writeByte(address, value);
 }
 
 /// Rotate A left (RCLA)
@@ -717,6 +769,20 @@ fn rotateALeft(z80: *Z80) void {
     z80.flags = .{ .carried = overflowed != 0 };
 }
 
+fn rotateLeftThroughCarry(flags: Flags, operand: u8) PrefixResult {
+    var result, const overflowed = @shlWithOverflow(operand, 1);
+
+    result += if (flags.carried) 1 else 0;
+
+    return .{
+        result,
+        .{
+            .carried = overflowed != 0,
+            .was_zero = result == 0,
+        },
+    };
+}
+
 /// Rotate A left through carry (RLA)
 fn rotateALeftThroughCarry(z80: *Z80) void {
     z80.registers.a, const overflowed = @shlWithOverflow(z80.registers.a, 1);
@@ -725,6 +791,55 @@ fn rotateALeftThroughCarry(z80: *Z80) void {
 
     z80.flags = .{
         .carried = overflowed != 0,
+    };
+}
+
+/// Rotate value right (RRC)
+fn rotateRight(operand: u8) PrefixResult {
+    const lowestBit: u8 = operand & 1;
+
+    var result = operand >> 1;
+
+    result |= lowestBit << 7;
+
+    return .{
+        result,
+        .{
+            .carried = lowestBit != 0,
+            .was_zero = result == 0,
+        },
+    };
+}
+
+/// Shift value right, don't touch high bit (SRA)
+fn shiftRightArithmetically(operand: u8) PrefixResult {
+    const lowestBit: u8 = operand & 1;
+    const highestBit: u8 = operand & 0b10000000;
+
+    var result = operand >> 1;
+    result |= highestBit;
+
+    return .{
+        result,
+        .{
+            .carried = lowestBit != 0,
+            .was_zero = result == 0,
+        },
+    };
+}
+
+/// Shift value right (SRL)
+fn shiftRightLogically(operand: u8) PrefixResult {
+    const lowestBit: u8 = operand & 1;
+
+    const result = operand >> 1;
+
+    return .{
+        result,
+        .{
+            .carried = lowestBit != 0,
+            .was_zero = result == 0,
+        },
     };
 }
 
@@ -739,6 +854,24 @@ fn rotateARight(z80: *Z80) void {
     z80.flags = .{ .carried = lowestBit != 0 };
 }
 
+fn rotateRightThroughCarry(flags: Flags, operand: u8) PrefixResult {
+    const lowestBit: u8 = operand & 1;
+
+    var result = operand >> 1;
+
+    const carry_bit: u8 = if (flags.carried) 1 else 0;
+
+    result |= carry_bit << 7;
+
+    return .{
+        result,
+        .{
+            .carried = lowestBit != 0,
+            .was_zero = result == 0,
+        },
+    };
+}
+
 /// Rotate A right through carry (RRA)
 fn rotateARightThroughCarry(z80: *Z80) void {
     const lowestBit = z80.registers.a & 1;
@@ -750,6 +883,13 @@ fn rotateARightThroughCarry(z80: *Z80) void {
     z80.registers.a |= carry_bit << 7;
 
     z80.flags = .{ .carried = lowestBit != 0 };
+}
+
+/// Swap the upper 4 bits with the lower 4
+fn swap(operand: u8) PrefixResult {
+    const result = (operand >> 4) | ((operand << 4) & 0xF0);
+
+    return .{ result, .{ .was_zero = result == 0 } };
 }
 
 /// Set the carry flag to true (SCF)
