@@ -953,7 +953,7 @@ test "0xCA jp z, a16" {
 // 0xCB prefix
 
 test "0xCC call z, a16" {
-    try runTestsFor("CA");
+    try runTestsFor("CC");
 }
 
 test "0xCD call a16" {
@@ -1391,4 +1391,772 @@ test "0xCB 0x3E srl [hl]" {
 
 test "0xCB 0x3F srl a" {
     try runTestsFor("CB 3F");
+}
+
+test "0xCB 0x40 bit 0, b" {
+    try runTestsFor("CB 40");
+}
+
+test "0xCB 0x41 bit 0, c" {
+    try runTestsFor("CB 41");
+}
+
+test "0xCB 0x42 bit 0, d" {
+    try runTestsFor("CB 42");
+}
+
+test "0xCB 0x43 bit 0, e" {
+    try runTestsFor("CB 43");
+}
+
+test "0xCB 0x44 bit 0, h" {
+    try runTestsFor("CB 44");
+}
+
+test "0xCB 0x45 bit 0, l" {
+    try runTestsFor("CB 45");
+}
+
+test "0xCB 0x46 bit 0, [hl]" {
+    try runTestsFor("CB 46");
+}
+
+test "0xCB 0x47 bit 0, a" {
+    try runTestsFor("CB 47");
+}
+
+test "0xCB 0x48 bit 1, b" {
+    try runTestsFor("CB 48");
+}
+
+test "0xCB 0x49 bit 1, c" {
+    try runTestsFor("CB 49");
+}
+
+test "0xCB 0x4A bit 1, d" {
+    try runTestsFor("CB 4A");
+}
+
+test "0xCB 0x4B bit 1, e" {
+    try runTestsFor("CB 4B");
+}
+
+test "0xCB 0x4C bit 1, h" {
+    try runTestsFor("CB 4C");
+}
+
+test "0xCB 0x4D bit 1, l" {
+    try runTestsFor("CB 4D");
+}
+
+test "0xCB 0x4E bit 1, [hl]" {
+    try runTestsFor("CB 4E");
+}
+
+test "0xCB 0x4F bit 1, a" {
+    try runTestsFor("CB 4F");
+}
+
+test "0xCB 0x50 bit 2, b" {
+    try runTestsFor("CB 50");
+}
+
+test "0xCB 0x51 bit 2, c" {
+    try runTestsFor("CB 51");
+}
+
+test "0xCB 0x52 bit 2, d" {
+    try runTestsFor("CB 52");
+}
+
+test "0xCB 0x53 bit 2, e" {
+    try runTestsFor("CB 53");
+}
+
+test "0xCB 0x54 bit 2, h" {
+    try runTestsFor("CB 54");
+}
+
+test "0xCB 0x55 bit 2, l" {
+    try runTestsFor("CB 55");
+}
+
+test "0xCB 0x56 bit 2, [hl]" {
+    try runTestsFor("CB 56");
+}
+
+test "0xCB 0x57 bit 2, a" {
+    try runTestsFor("CB 57");
+}
+
+test "0xCB 0x58 bit 3, b" {
+    try runTestsFor("CB 58");
+}
+
+test "0xCB 0x59 bit 3, c" {
+    try runTestsFor("CB 59");
+}
+
+test "0xCB 0x5A bit 3, d" {
+    try runTestsFor("CB 5A");
+}
+
+test "0xCB 0x5B bit 3, e" {
+    try runTestsFor("CB 5B");
+}
+
+test "0xCB 0x5C bit 3, h" {
+    try runTestsFor("CB 5C");
+}
+
+test "0xCB 0x5D bit 3, l" {
+    try runTestsFor("CB 5D");
+}
+
+test "0xCB 0x5E bit 3, [hl]" {
+    try runTestsFor("CB 5E");
+}
+
+test "0xCB 0x5F bit 3, a" {
+    try runTestsFor("CB 5F");
+}
+
+test "0xCB 0x60 bit 4, b" {
+    try runTestsFor("CB 60");
+}
+
+test "0xCB 0x61 bit 4, c" {
+    try runTestsFor("CB 61");
+}
+
+test "0xCB 0x62 bit 4, d" {
+    try runTestsFor("CB 62");
+}
+
+test "0xCB 0x63 bit 4, e" {
+    try runTestsFor("CB 63");
+}
+
+test "0xCB 0x64 bit 4, h" {
+    try runTestsFor("CB 64");
+}
+
+test "0xCB 0x65 bit 4, l" {
+    try runTestsFor("CB 65");
+}
+
+test "0xCB 0x66 bit 4, [hl]" {
+    try runTestsFor("CB 66");
+}
+
+test "0xCB 0x67 bit 4, a" {
+    try runTestsFor("CB 67");
+}
+
+test "0xCB 0x68 bit 5, b" {
+    try runTestsFor("CB 68");
+}
+
+test "0xCB 0x69 bit 5, c" {
+    try runTestsFor("CB 69");
+}
+
+test "0xCB 0x6A bit 5, d" {
+    try runTestsFor("CB 6A");
+}
+
+test "0xCB 0x6B bit 5, e" {
+    try runTestsFor("CB 6B");
+}
+
+test "0xCB 0x6C bit 5, h" {
+    try runTestsFor("CB 6C");
+}
+
+test "0xCB 0x6D bit 5, l" {
+    try runTestsFor("CB 6D");
+}
+
+test "0xCB 0x6E bit 5, [hl]" {
+    try runTestsFor("CB 6E");
+}
+
+test "0xCB 0x6F bit 5, a" {
+    try runTestsFor("CB 6F");
+}
+
+test "0xCB 0x70 bit 6, b" {
+    try runTestsFor("CB 70");
+}
+
+test "0xCB 0x71 bit 6, c" {
+    try runTestsFor("CB 71");
+}
+
+test "0xCB 0x72 bit 6, d" {
+    try runTestsFor("CB 72");
+}
+
+test "0xCB 0x73 bit 6, e" {
+    try runTestsFor("CB 73");
+}
+
+test "0xCB 0x74 bit 6, h" {
+    try runTestsFor("CB 74");
+}
+
+test "0xCB 0x75 bit 6, l" {
+    try runTestsFor("CB 75");
+}
+
+test "0xCB 0x76 bit 6, [hl]" {
+    try runTestsFor("CB 76");
+}
+
+test "0xCB 0x77 bit 6, a" {
+    try runTestsFor("CB 77");
+}
+
+test "0xCB 0x78 bit 7, b" {
+    try runTestsFor("CB 78");
+}
+
+test "0xCB 0x79 bit 7, c" {
+    try runTestsFor("CB 79");
+}
+
+test "0xCB 0x7A bit 7, d" {
+    try runTestsFor("CB 7A");
+}
+
+test "0xCB 0x7B bit 7, e" {
+    try runTestsFor("CB 7B");
+}
+
+test "0xCB 0x7C bit 7, h" {
+    try runTestsFor("CB 7C");
+}
+
+test "0xCB 0x7D bit 7, l" {
+    try runTestsFor("CB 7D");
+}
+
+test "0xCB 0x7E bit 7, [hl]" {
+    try runTestsFor("CB 7E");
+}
+
+test "0xCB 0x7F bit 7, a" {
+    try runTestsFor("CB 7F");
+}
+
+test "0xCB 0x80 res 0, b" {
+    try runTestsFor("CB 80");
+}
+
+test "0xCB 0x81 res 0, c" {
+    try runTestsFor("CB 81");
+}
+
+test "0xCB 0x82 res 0, d" {
+    try runTestsFor("CB 82");
+}
+
+test "0xCB 0x83 res 0, e" {
+    try runTestsFor("CB 83");
+}
+
+test "0xCB 0x84 res 0, h" {
+    try runTestsFor("CB 84");
+}
+
+test "0xCB 0x85 res 0, l" {
+    try runTestsFor("CB 85");
+}
+
+test "0xCB 0x86 res 0, [hl]" {
+    try runTestsFor("CB 86");
+}
+
+test "0xCB 0x87 res 0, a" {
+    try runTestsFor("CB 87");
+}
+
+test "0xCB 0x88 res 1, b" {
+    try runTestsFor("CB 88");
+}
+
+test "0xCB 0x89 res 1, c" {
+    try runTestsFor("CB 89");
+}
+
+test "0xCB 0x8A res 1, d" {
+    try runTestsFor("CB 8A");
+}
+
+test "0xCB 0x8B res 1, e" {
+    try runTestsFor("CB 8B");
+}
+
+test "0xCB 0x8C res 1, h" {
+    try runTestsFor("CB 8C");
+}
+
+test "0xCB 0x8D res 1, l" {
+    try runTestsFor("CB 8D");
+}
+
+test "0xCB 0x8E res 1, [hl]" {
+    try runTestsFor("CB 8E");
+}
+
+test "0xCB 0x8F res 1, a" {
+    try runTestsFor("CB 8F");
+}
+
+test "0xCB 0x90 res 2, b" {
+    try runTestsFor("CB 90");
+}
+
+test "0xCB 0x91 res 2, c" {
+    try runTestsFor("CB 91");
+}
+
+test "0xCB 0x92 res 2, d" {
+    try runTestsFor("CB 92");
+}
+
+test "0xCB 0x93 res 2, e" {
+    try runTestsFor("CB 93");
+}
+
+test "0xCB 0x94 res 2, h" {
+    try runTestsFor("CB 94");
+}
+
+test "0xCB 0x95 res 2, l" {
+    try runTestsFor("CB 95");
+}
+
+test "0xCB 0x96 res 2, [hl]" {
+    try runTestsFor("CB 96");
+}
+
+test "0xCB 0x97 res 2, a" {
+    try runTestsFor("CB 97");
+}
+
+test "0xCB 0x98 res 3, b" {
+    try runTestsFor("CB 98");
+}
+
+test "0xCB 0x99 res 3, c" {
+    try runTestsFor("CB 99");
+}
+
+test "0xCB 0x9A res 3, d" {
+    try runTestsFor("CB 9A");
+}
+
+test "0xCB 0x9B res 3, e" {
+    try runTestsFor("CB 9B");
+}
+
+test "0xCB 0x9C res 3, h" {
+    try runTestsFor("CB 9C");
+}
+
+test "0xCB 0x9D res 3, l" {
+    try runTestsFor("CB 9D");
+}
+
+test "0xCB 0x9E res 3, [hl]" {
+    try runTestsFor("CB 9E");
+}
+
+test "0xCB 0x9F res 3, a" {
+    try runTestsFor("CB 9F");
+}
+
+test "0xCB 0xA0 res 4, b" {
+    try runTestsFor("CB A0");
+}
+
+test "0xCB 0xA1 res 4, c" {
+    try runTestsFor("CB A1");
+}
+
+test "0xCB 0xA2 res 4, d" {
+    try runTestsFor("CB A2");
+}
+
+test "0xCB 0xA3 res 4, e" {
+    try runTestsFor("CB A3");
+}
+
+test "0xCB 0xA4 res 4, h" {
+    try runTestsFor("CB A4");
+}
+
+test "0xCB 0xA5 res 4, l" {
+    try runTestsFor("CB A5");
+}
+
+test "0xCB 0xA6 res 4, [hl]" {
+    try runTestsFor("CB A6");
+}
+
+test "0xCB 0xA7 res 4, a" {
+    try runTestsFor("CB A7");
+}
+
+test "0xCB 0xA8 res 5, b" {
+    try runTestsFor("CB A8");
+}
+
+test "0xCB 0xA9 res 5, c" {
+    try runTestsFor("CB A9");
+}
+
+test "0xCB 0xAA res 5, d" {
+    try runTestsFor("CB AA");
+}
+
+test "0xCB 0xAB res 5, e" {
+    try runTestsFor("CB AB");
+}
+
+test "0xCB 0xAC res 5, h" {
+    try runTestsFor("CB AC");
+}
+
+test "0xCB 0xAD res 5, l" {
+    try runTestsFor("CB AD");
+}
+
+test "0xCB 0xAE res 5, [hl]" {
+    try runTestsFor("CB AE");
+}
+
+test "0xCB 0xAF res 5, a" {
+    try runTestsFor("CB AF");
+}
+
+test "0xCB 0xB0 res 6, b" {
+    try runTestsFor("CB B0");
+}
+
+test "0xCB 0xB1 res 6, c" {
+    try runTestsFor("CB B1");
+}
+
+test "0xCB 0xB2 res 6, d" {
+    try runTestsFor("CB B2");
+}
+
+test "0xCB 0xB3 res 6, e" {
+    try runTestsFor("CB B3");
+}
+
+test "0xCB 0xB4 res 6, h" {
+    try runTestsFor("CB B4");
+}
+
+test "0xCB 0xB5 res 6, l" {
+    try runTestsFor("CB B5");
+}
+
+test "0xCB 0xB6 res 6, [hl]" {
+    try runTestsFor("CB B6");
+}
+
+test "0xCB 0xB7 res 6, a" {
+    try runTestsFor("CB B7");
+}
+
+test "0xCB 0xB8 res 7, b" {
+    try runTestsFor("CB B8");
+}
+
+test "0xCB 0xB9 res 7, c" {
+    try runTestsFor("CB B9");
+}
+
+test "0xCB 0xBA res 7, d" {
+    try runTestsFor("CB BA");
+}
+
+test "0xCB 0xBB res 7, e" {
+    try runTestsFor("CB BB");
+}
+
+test "0xCB 0xBC res 7, h" {
+    try runTestsFor("CB BC");
+}
+
+test "0xCB 0xBD res 7, l" {
+    try runTestsFor("CB BD");
+}
+
+test "0xCB 0xBE res 7, [hl]" {
+    try runTestsFor("CB BE");
+}
+
+test "0xCB 0xBF res 7, a" {
+    try runTestsFor("CB BF");
+}
+
+test "0xCB 0xC0 set 0, b" {
+    try runTestsFor("CB C0");
+}
+
+test "0xCB 0xC1 set 0, c" {
+    try runTestsFor("CB C1");
+}
+
+test "0xCB 0xC2 set 0, d" {
+    try runTestsFor("CB C2");
+}
+
+test "0xCB 0xC3 set 0, e" {
+    try runTestsFor("CB C3");
+}
+
+test "0xCB 0xC4 set 0, h" {
+    try runTestsFor("CB C4");
+}
+
+test "0xCB 0xC5 set 0, l" {
+    try runTestsFor("CB C5");
+}
+
+test "0xCB 0xC6 set 0, [hl]" {
+    try runTestsFor("CB C6");
+}
+
+test "0xCB 0xC7 set 0, a" {
+    try runTestsFor("CB C7");
+}
+
+test "0xCB 0xC8 set 1, b" {
+    try runTestsFor("CB C8");
+}
+
+test "0xCB 0xC9 set 1, c" {
+    try runTestsFor("CB C9");
+}
+
+test "0xCB 0xCA set 1, d" {
+    try runTestsFor("CB CA");
+}
+
+test "0xCB 0xCB set 1, e" {
+    try runTestsFor("CB CB");
+}
+
+test "0xCB 0xCC set 1, h" {
+    try runTestsFor("CB CC");
+}
+
+test "0xCB 0xCD set 1, l" {
+    try runTestsFor("CB CD");
+}
+
+test "0xCB 0xCE set 1, [hl]" {
+    try runTestsFor("CB CE");
+}
+
+test "0xCB 0xCF set 1, a" {
+    try runTestsFor("CB CF");
+}
+
+test "0xCB 0xD0 set 2, b" {
+    try runTestsFor("CB D0");
+}
+
+test "0xCB 0xD1 set 2, c" {
+    try runTestsFor("CB D1");
+}
+
+test "0xCB 0xD2 set 2, d" {
+    try runTestsFor("CB D2");
+}
+
+test "0xCB 0xD3 set 2, e" {
+    try runTestsFor("CB D3");
+}
+
+test "0xCB 0xD4 set 2, h" {
+    try runTestsFor("CB D4");
+}
+
+test "0xCB 0xD5 set 2, l" {
+    try runTestsFor("CB D5");
+}
+
+test "0xCB 0xD6 set 2, [hl]" {
+    try runTestsFor("CB D6");
+}
+
+test "0xCB 0xD7 set 2, a" {
+    try runTestsFor("CB D7");
+}
+
+test "0xCB 0xD8 set 3, b" {
+    try runTestsFor("CB D8");
+}
+
+test "0xCB 0xD9 set 3, c" {
+    try runTestsFor("CB D9");
+}
+
+test "0xCB 0xDA set 3, d" {
+    try runTestsFor("CB DA");
+}
+
+test "0xCB 0xDB set 3, e" {
+    try runTestsFor("CB DB");
+}
+
+test "0xCB 0xDC set 3, h" {
+    try runTestsFor("CB DC");
+}
+
+test "0xCB 0xDD set 3, l" {
+    try runTestsFor("CB DD");
+}
+
+test "0xCB 0xDE set 3, [hl]" {
+    try runTestsFor("CB DE");
+}
+
+test "0xCB 0xDF set 3, a" {
+    try runTestsFor("CB DF");
+}
+
+test "0xCB 0xE0 set 4, b" {
+    try runTestsFor("CB E0");
+}
+
+test "0xCB 0xE1 set 4, c" {
+    try runTestsFor("CB E1");
+}
+
+test "0xCB 0xE2 set 4, d" {
+    try runTestsFor("CB E2");
+}
+
+test "0xCB 0xE3 set 4, e" {
+    try runTestsFor("CB E3");
+}
+
+test "0xCB 0xE4 set 4, h" {
+    try runTestsFor("CB E4");
+}
+
+test "0xCB 0xE5 set 4, l" {
+    try runTestsFor("CB E5");
+}
+
+test "0xCB 0xE6 set 4, [hl]" {
+    try runTestsFor("CB E6");
+}
+
+test "0xCB 0xE7 set 4, a" {
+    try runTestsFor("CB E7");
+}
+
+test "0xCB 0xE8 set 5, b" {
+    try runTestsFor("CB E8");
+}
+
+test "0xCB 0xE9 set 5, c" {
+    try runTestsFor("CB E9");
+}
+
+test "0xCB 0xEA set 5, d" {
+    try runTestsFor("CB EA");
+}
+
+test "0xCB 0xEB set 5, e" {
+    try runTestsFor("CB EB");
+}
+
+test "0xCB 0xEC set 5, h" {
+    try runTestsFor("CB EC");
+}
+
+test "0xCB 0xED set 5, l" {
+    try runTestsFor("CB ED");
+}
+
+test "0xCB 0xEE set 5, [hl]" {
+    try runTestsFor("CB EE");
+}
+
+test "0xCB 0xEF set 5, a" {
+    try runTestsFor("CB EF");
+}
+
+test "0xCB 0xF0 set 6, b" {
+    try runTestsFor("CB F0");
+}
+
+test "0xCB 0xF1 set 6, c" {
+    try runTestsFor("CB F1");
+}
+
+test "0xCB 0xF2 set 6, d" {
+    try runTestsFor("CB F2");
+}
+
+test "0xCB 0xF3 set 6, e" {
+    try runTestsFor("CB F3");
+}
+
+test "0xCB 0xF4 set 6, h" {
+    try runTestsFor("CB F4");
+}
+
+test "0xCB 0xF5 set 6, l" {
+    try runTestsFor("CB F5");
+}
+
+test "0xCB 0xF6 set 6, [hl]" {
+    try runTestsFor("CB F6");
+}
+
+test "0xCB 0xF7 set 6, a" {
+    try runTestsFor("CB F7");
+}
+
+test "0xCB 0xF8 set 7, b" {
+    try runTestsFor("CB F8");
+}
+
+test "0xCB 0xF9 set 7, c" {
+    try runTestsFor("CB F9");
+}
+
+test "0xCB 0xFA set 7, d" {
+    try runTestsFor("CB FA");
+}
+
+test "0xCB 0xFB set 7, e" {
+    try runTestsFor("CB FB");
+}
+
+test "0xCB 0xFC set 7, h" {
+    try runTestsFor("CB FC");
+}
+
+test "0xCB 0xFD set 7, l" {
+    try runTestsFor("CB FD");
+}
+
+test "0xCB 0xFE set 7, [hl]" {
+    try runTestsFor("CB FE");
+}
+
+test "0xCB 0xFF set 7, a" {
+    try runTestsFor("CB FF");
 }

@@ -243,7 +243,7 @@ fn operate(z80: *Z80, opcode: u8) void {
 fn operatePrefixed(z80: *Z80, opcode: u8) void {
     const operand = z80.operandPrefixed(opcode);
 
-    const result, const flags = switch (opcode) {
+    const update, const flags = switch (opcode) {
         0x00...0x07 => rotateLeft(operand),
         0x08...0x0F => rotateRight(operand),
         0x10...0x17 => rotateLeftThroughCarry(z80.flags, operand),
@@ -252,11 +252,24 @@ fn operatePrefixed(z80: *Z80, opcode: u8) void {
         0x28...0x2F => shiftRightArithmetically(operand),
         0x30...0x37 => swap(operand),
         0x38...0x3F => shiftRightLogically(operand),
+        inline 0x40...0xFF => |code| bit: {
+            const bit = comptime bitPrefixed(code);
 
-        else => .{ 0, z80.flags },
+            const high: u4 = @truncate(code >> 4);
+
+            break :bit switch (high) {
+                0x4...0x7 => checkBit(z80.flags, bit, operand),
+                0x8...0xB => zeroBit(z80.flags, bit, operand),
+                0xC...0xF => setBit(z80.flags, bit, operand),
+
+                else => unreachable,
+            };
+        },
     };
 
-    z80.setPrefixedResult(opcode, result);
+    if (update) |result| {
+        z80.setPrefixedResult(opcode, result);
+    }
     z80.flags = flags;
 }
 
@@ -298,6 +311,13 @@ fn setPrefixedResult(z80: *Z80, opcode: u8, result: u8) void {
         0x6 => z80.writeByte(z80.registers.hl(), result),
         else => unreachable,
     };
+}
+
+fn bitPrefixed(opcode: u8) u3 {
+    const x: u3 = (opcode >> 4) % 4 * 2;
+    const y: u3 = if ((opcode & 0x0F) < 8) 0 else 1;
+
+    return x + y;
 }
 
 /// Given an opcode get its 8 bit operand value.
@@ -730,7 +750,7 @@ fn compare(z80: *Z80, operand: u8) void {
     };
 }
 
-const PrefixResult = struct { u8, Flags };
+const PrefixResult = struct { ?u8, Flags };
 
 /// Rotate value left (RLC)
 fn rotateLeft(operand: u8) PrefixResult {
@@ -892,6 +912,32 @@ fn swap(operand: u8) PrefixResult {
     return .{ result, .{ .was_zero = result == 0 } };
 }
 
+/// Check the bit and set the zero flag if unset
+fn checkBit(flags: Flags, comptime bit: u3, operand: u8) PrefixResult {
+    const result = operand & (1 << bit);
+
+    return .{ null, .{
+        .was_zero = result == 0,
+        .carried = flags.carried,
+        .half_carried = true,
+    } };
+}
+
+/// Set the given bit to zero
+fn zeroBit(flags: Flags, comptime bit: u3, operand: u8) PrefixResult {
+    const mask: u8 = 1 << bit;
+    const result = operand & ~mask;
+
+    return .{ result, flags };
+}
+
+/// Set the given bit to one
+fn setBit(flags: Flags, comptime bit: u3, operand: u8) PrefixResult {
+    const result = operand | (1 << bit);
+
+    return .{ result, flags };
+}
+
 /// Set the carry flag to true (SCF)
 fn setCarry(z80: *Z80) void {
     z80.flags = .{
@@ -1012,16 +1058,4 @@ inline fn from16(value: u16) struct { u8, u8 } {
     const low: u8 = @truncate(value);
 
     return .{ high, low };
-}
-
-test "add constant" {
-    var z80 = Z80.init(.{ .a = 2 });
-    z80.mmu[0] = 0xC6;
-    z80.mmu[1] = 0x05;
-    z80.mmu[2] = 0x00;
-    z80.step();
-    z80.step();
-    try std.testing.expectEqual(3, z80.clock.m);
-    try std.testing.expectEqual(12, z80.clock.t);
-    try std.testing.expectEqual(7, z80.registers.a);
 }
