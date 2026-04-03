@@ -55,6 +55,7 @@ const CpuState = struct {
     h: u8,
     l: u8,
     ram: []const ([2]u16),
+    ime: u1,
 
     pub fn apply(state: CpuState, z80: *Z80) void {
         for (state.ram) |ram| {
@@ -76,6 +77,7 @@ const CpuState = struct {
         };
         z80.program_counter = state.pc;
         z80.flags = Flags.from(state.f);
+        z80.interrupt_master_enable = state.ime == 1;
     }
 
     pub fn check(state: CpuState, z80: Z80) !void {
@@ -123,6 +125,10 @@ const CpuState = struct {
         std.testing.expectEqual(state.pc, z80.program_counter) catch {
             errored = true;
             std.debug.print("\ttesting program counter\n", .{});
+        };
+        std.testing.expectEqual(state.ime == 1, z80.interrupt_master_enable) catch {
+            errored = true;
+            std.debug.print("\ttesting ime\n", .{});
         };
 
         for (state.ram) |ram| {

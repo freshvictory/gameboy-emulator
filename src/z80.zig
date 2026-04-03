@@ -12,6 +12,10 @@ program_counter: u16 = 0,
 
 flags: Flags = .{},
 
+set_interrupt_after_next_instruction: bool = false,
+
+interrupt_master_enable: bool = false,
+
 const Clock = struct {
     m: u8 = 0,
     t: u8 = 0,
@@ -83,9 +87,12 @@ pub fn init(registers: Registers) Z80 {
 }
 
 pub fn step(z80: *Z80) void {
+    const set_interrupt = z80.set_interrupt_after_next_instruction;
+    z80.set_interrupt_after_next_instruction = false;
     const opcode = z80.readByte(z80.program_counter);
     z80.program_counter +%= 1;
     z80.operate(opcode);
+    if (set_interrupt) z80.interrupt_master_enable = true;
 }
 
 fn operate(z80: *Z80, opcode: u8) void {
@@ -226,10 +233,7 @@ fn operate(z80: *Z80, opcode: u8) void {
         0xE8 => z80.addToStackPointer(z80.signed8()),
         0xF8 => z80.addToStackPointerAndLoad(z80.signed8()),
 
-        0xD9 => {
-            z80.@"return"();
-            z80.enableInterrupts();
-        },
+        0xD9 => z80.returnAndEnableInterrupts(),
         0xF3 => z80.disableInterrupts(),
         0xFB => z80.enableInterrupts(),
 
@@ -1039,14 +1043,20 @@ fn returnIf(z80: *Z80, condition: bool) void {
     if (condition) z80.@"return"();
 }
 
-// TODO
-fn enableInterrupts(z80: *Z80) void {
-    _ = z80;
+/// (RETI)
+fn returnAndEnableInterrupts(z80: *Z80) void {
+    z80.@"return"();
+    z80.interrupt_master_enable = true;
 }
 
-// TODO
+/// Enable interrupts after the next instruction (EI)
+fn enableInterrupts(z80: *Z80) void {
+    z80.set_interrupt_after_next_instruction = true;
+}
+
+/// Disable interrupts (DI)
 fn disableInterrupts(z80: *Z80) void {
-    _ = z80;
+    z80.interrupt_master_enable = false;
 }
 
 inline fn to16(high: u8, low: u8) u16 {
