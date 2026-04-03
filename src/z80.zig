@@ -1,8 +1,9 @@
 const std = @import("std");
+const MMU = @import("mmu.zig");
 
 const Z80 = @This();
 
-mmu: [0x10000]u8 = [_]u8{0} ** 0x10000,
+mmu: MMU,
 
 clock: Clock = .{},
 
@@ -80,9 +81,10 @@ pub const Flags = packed struct(u4) {
     }
 };
 
-pub fn init(registers: Registers) Z80 {
+pub fn init(registers: Registers, mmu: MMU) Z80 {
     return .{
         .registers = registers,
+        .mmu = mmu,
     };
 }
 
@@ -279,12 +281,12 @@ fn operatePrefixed(z80: *Z80, opcode: u8) void {
 
 fn writeByte(z80: *Z80, address: u16, value: u8) void {
     z80.clock.tick();
-    z80.mmu[address] = value;
+    z80.mmu.writeByte(address, value);
 }
 
 fn readByte(z80: *Z80, address: u16) u8 {
     z80.clock.tick();
-    return z80.mmu[address];
+    return z80.mmu.readByte(address);
 }
 
 fn operandPrefixed(z80: *Z80, opcode: u8) u8 {

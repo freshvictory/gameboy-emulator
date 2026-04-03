@@ -1,5 +1,6 @@
 const std = @import("std");
 const Z80 = @import("z80.zig");
+const MMU = @import("mmu.zig");
 const Flags = Z80.Flags;
 
 pub fn runTestsFor(comptime instruction: []const u8) !void {
@@ -33,7 +34,16 @@ const TestCase = struct {
     cycles: []const std.json.Value,
 
     pub fn run(t: TestCase) !void {
-        var z80 = Z80.init(.{});
+        var mmu = MMU.init();
+
+        for (t.initial.ram) |ram| {
+            const address = ram[0];
+            const value: u8 = @intCast(ram[1]);
+
+            mmu.writeByte(address, value);
+        }
+
+        var z80 = Z80.init(.{}, mmu);
         t.initial.apply(&z80);
 
         z80.step();
@@ -58,13 +68,6 @@ const CpuState = struct {
     ime: u1,
 
     pub fn apply(state: CpuState, z80: *Z80) void {
-        for (state.ram) |ram| {
-            const address = ram[0];
-            const value: u8 = @intCast(ram[1]);
-
-            z80.mmu[address] = value;
-        }
-
         z80.registers = .{
             .stack_pointer = state.sp,
             .a = state.a,
@@ -134,7 +137,7 @@ const CpuState = struct {
         for (state.ram) |ram| {
             const address = ram[0];
             const value: u8 = @intCast(ram[1]);
-            std.testing.expectEqual(value, z80.mmu[address]) catch {
+            std.testing.expectEqual(value, z80.mmu.readByte(address)) catch {
                 errored = true;
                 std.debug.print("\ttesting memory address {d}\n", .{address});
             };
