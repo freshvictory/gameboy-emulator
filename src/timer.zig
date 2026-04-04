@@ -1,6 +1,9 @@
 const std = @import("std");
+const Interrupts = @import("interrupts.zig");
 
 const Timer = @This();
+
+interrupts: ?*Interrupts = null,
 
 m: u8 = 0,
 
@@ -37,28 +40,29 @@ const Control = packed struct(u3) {
     enabled: bool = false,
 };
 
-pub fn tick(timer: *Timer) bool {
+pub fn tick(timer: *Timer) void {
     timer.m, const m_overflowed = @addWithOverflow(timer.m, 1);
 
     if (m_overflowed != 0) {
         timer.divider +%= 1;
     }
 
-    if (!timer.control.enabled) return false;
+    if (!timer.control.enabled) return;
 
     const should_increment = timer.control.frequency.shouldTrigger(timer.m);
-    if (!should_increment) return false;
+    if (!should_increment) return;
 
     timer.counter, const counter_overflowed = @addWithOverflow(
         timer.counter,
         1,
     );
 
-    if (counter_overflowed == 0) return false;
+    if (counter_overflowed == 0) return;
 
     timer.counter = timer.reset_value;
 
-    return true;
+    const interrupts = timer.interrupts orelse return;
+    interrupts.raise(.timer);
 }
 
 test "divider increments every 256 m cycles" {
@@ -134,7 +138,10 @@ test "counter increments at frequency 256" {
 }
 
 test "counter overflows to reset value and returns true" {
+    var interrupts = Interrupts{};
+
     var timer = Timer{
+        .interrupts = &interrupts,
         .counter = 255,
         .reset_value = 123,
         .control = .{
@@ -143,9 +150,9 @@ test "counter overflows to reset value and returns true" {
         },
         .m = 3,
     };
-    const overflowed = timer.tick();
+    timer.tick();
     try std.testing.expectEqual(123, timer.counter);
-    try std.testing.expect(overflowed);
+    try std.testing.expect(interrupts.active.timer);
 }
 
 test "counter doesn't increment if not enabled" {

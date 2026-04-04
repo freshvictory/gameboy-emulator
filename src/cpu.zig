@@ -105,8 +105,7 @@ pub fn step(cpu: *CPU) void {
 }
 
 fn tick(cpu: *CPU) void {
-    const should_interrupt = cpu.timer.tick();
-    if (should_interrupt) cpu.interrupts.raise(.timer);
+    cpu.timer.tick();
 }
 
 fn operate(cpu: *CPU, opcode: u8) void {

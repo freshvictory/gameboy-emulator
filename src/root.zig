@@ -8,11 +8,12 @@ const CPU = @import("cpu.zig");
 const Gameboy = @This();
 
 interrupts: Interrupts = .{},
-timer: Timer = .{},
+timer: Timer,
 mmu: MMU,
 cpu: CPU,
 
 pub fn boot(gameboy: *Gameboy, cartridge: Cartridge) void {
+    gameboy.timer = Timer{ .interrupts = &gameboy.interrupts };
     gameboy.mmu = MMU.init(
         cartridge,
         &gameboy.timer,
