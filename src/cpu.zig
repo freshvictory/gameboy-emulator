@@ -16,6 +16,8 @@ set_interrupt_after_next_instruction: bool = false,
 
 interrupt_master_enable: bool = false,
 
+halted: bool = false,
+
 pub const Registers = struct {
     a: u8 = 0,
     b: u8 = 0,
@@ -77,16 +79,19 @@ pub fn init(mmu: MMU) CPU {
 }
 
 pub fn step(cpu: *CPU) void {
+    cpu.handleInterrupt();
+
+    if (cpu.halted) {
+        cpu.tick();
+        return;
+    }
+
     const set_interrupt = cpu.set_interrupt_after_next_instruction;
     cpu.set_interrupt_after_next_instruction = false;
     const opcode = cpu.readByte(cpu.program_counter);
     cpu.program_counter +%= 1;
     cpu.operate(opcode);
     if (set_interrupt) cpu.interrupt_master_enable = true;
-
-    if (cpu.interrupt_master_enable) {
-        cpu.handleInterrupt();
-    }
 }
 
 fn tick(cpu: *CPU) void {
@@ -278,12 +283,18 @@ fn operatePrefixed(cpu: *CPU, opcode: u8) void {
 fn handleInterrupt(cpu: *CPU) void {
     const interrupt = cpu.mmu.currentInterrupt() orelse return;
 
-    cpu.interrupt_master_enable = false;
+    cpu.halted = false;
 
-    cpu.tick();
-    cpu.tick();
-    cpu.call(interrupt.address());
-    cpu.mmu.clearInterrupt(interrupt);
+    if (!cpu.interrupt_master_enable) return;
+
+    if (cpu.interrupt_master_enable) {
+        cpu.interrupt_master_enable = false;
+
+        cpu.tick();
+        cpu.tick();
+        cpu.call(interrupt.address());
+        cpu.mmu.clearInterrupt(interrupt);
+    }
 }
 
 fn writeByte(cpu: *CPU, address: u16, value: u8) void {
@@ -377,10 +388,11 @@ inline fn highAddress(value: u8) u16 {
     return 0xFF00 + @as(u16, value);
 }
 
-/// TODO
 fn halt(cpu: *CPU) void {
+    cpu.halted = true;
     cpu.tick();
     cpu.tick();
+    // TODO: halt bug https://gbdev.io/pandocs/halt.html#halt-bug
 }
 
 /// TODO
