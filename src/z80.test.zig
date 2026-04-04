@@ -1,4 +1,5 @@
 const std = @import("std");
+const Cartridge = @import("cartridge.zig");
 const Z80 = @import("z80.zig");
 const MMU = @import("mmu.zig");
 const Flags = Z80.Flags;
@@ -34,7 +35,9 @@ const TestCase = struct {
     cycles: []const std.json.Value,
 
     pub fn run(t: TestCase) !void {
-        var mmu = MMU.init();
+        var cartridge_contents = [_]u8{0} ** 0x10000;
+        const cartridge = Cartridge.init(&cartridge_contents);
+        var mmu = MMU.init(cartridge);
 
         for (t.initial.ram) |ram| {
             const address = ram[0];
