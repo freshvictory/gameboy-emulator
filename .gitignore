@@ -2,4 +2,6 @@
 
 .zig-cache/
 zig-out/
+
+src/blargg/
 src/sm83/
