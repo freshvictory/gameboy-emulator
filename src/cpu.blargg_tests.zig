@@ -23,6 +23,8 @@ fn run(comptime filename: []const u8) !void {
 
         if (i % 1000 != 0) continue;
 
+        try writer.flush();
+
         if (std.mem.indexOf(u8, &output, "Failed") != null) {
             const out = @as([*:0]const u8, &output);
             std.debug.print("\n{s}\n", .{out});
@@ -53,7 +55,7 @@ test "Immediate value operations" {
     try run("04-op r,imm");
 }
 
-test "05-op rp" {
+test "16-bit register operations" {
     try run("05-op rp");
 }
 
@@ -69,7 +71,7 @@ test "Miscellaneous" {
     try run("08-misc instrs");
 }
 
-test "Register operations" {
+test "8-bit register operations" {
     try run("09-op r,r");
 }
 
