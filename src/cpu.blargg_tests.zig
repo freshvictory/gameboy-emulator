@@ -1,5 +1,6 @@
-///! Run Blargg's CPU instruction tests.
-///! https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs
+//! Run Blargg's CPU instruction tests.
+//! https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs
+
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
 const Gameboy = @import("root.zig");
