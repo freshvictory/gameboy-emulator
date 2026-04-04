@@ -9,7 +9,8 @@ clock: Clock = .{},
 
 registers: Registers,
 
-program_counter: u16 = 0,
+// Start at the cartridge's entry point
+program_counter: u16 = 0x100,
 
 flags: Flags = .{},
 
