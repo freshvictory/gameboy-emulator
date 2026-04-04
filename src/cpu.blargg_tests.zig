@@ -3,7 +3,7 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
 const MMU = @import("mmu.zig");
-const Z80 = @import("z80.zig");
+const CPU = @import("cpu.zig");
 
 fn run(comptime filename: []const u8) !void {
     var output: [100:0]u8 = [_:0]u8{0} ** 100;
@@ -14,12 +14,12 @@ fn run(comptime filename: []const u8) !void {
     @memcpy(&rom, romFile);
     const cartridge = Cartridge.init(&rom);
     const mmu = MMU.initWithWriter(cartridge, &writer);
-    var z80 = Z80.init(.{}, mmu);
+    var cpu = CPU.init(.{}, mmu);
 
     const max_cycles = 100_000_000;
     var i: usize = 0;
     while (i < max_cycles) : (i += 1) {
-        z80.step();
+        cpu.step();
 
         if (i % 1000 != 0) continue;
 

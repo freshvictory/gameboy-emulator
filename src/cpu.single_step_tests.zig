@@ -1,8 +1,8 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
-const Z80 = @import("z80.zig");
+const CPU = @import("cpu.zig");
 const MMU = @import("mmu.zig");
-const Flags = Z80.Flags;
+const Flags = CPU.Flags;
 
 pub fn runTestsFor(comptime instruction: []const u8) !void {
     const json = @embedFile("sm83/v1/" ++ instruction ++ ".json");
@@ -46,13 +46,13 @@ const TestCase = struct {
             mmu.writeByte(address, value);
         }
 
-        var z80 = Z80.init(.{}, mmu);
-        t.initial.apply(&z80);
+        var cpu = CPU.init(.{}, mmu);
+        t.initial.apply(&cpu);
 
-        z80.step();
+        cpu.step();
 
-        try t.final.check(z80);
-        try std.testing.expectEqual(t.cycles.len, z80.clock.m);
+        try t.final.check(cpu);
+        try std.testing.expectEqual(t.cycles.len, cpu.clock.m);
     }
 };
 
@@ -70,8 +70,8 @@ const CpuState = struct {
     ram: []const ([2]u16),
     ime: u1,
 
-    pub fn apply(state: CpuState, z80: *Z80) void {
-        z80.registers = .{
+    pub fn apply(state: CpuState, cpu: *CPU) void {
+        cpu.registers = .{
             .stack_pointer = state.sp,
             .a = state.a,
             .b = state.b,
@@ -81,58 +81,58 @@ const CpuState = struct {
             .h = state.h,
             .l = state.l,
         };
-        z80.program_counter = state.pc;
-        z80.flags = Flags.from(state.f);
-        z80.interrupt_master_enable = state.ime == 1;
+        cpu.program_counter = state.pc;
+        cpu.flags = Flags.from(state.f);
+        cpu.interrupt_master_enable = state.ime == 1;
     }
 
-    pub fn check(state: CpuState, z80: Z80) !void {
+    pub fn check(state: CpuState, cpu: CPU) !void {
         var errored = false;
 
-        std.testing.expectEqual(state.a, z80.registers.a) catch {
+        std.testing.expectEqual(state.a, cpu.registers.a) catch {
             errored = true;
             std.debug.print("\ttesting a\n", .{});
         };
-        std.testing.expectEqual(state.b, z80.registers.b) catch {
+        std.testing.expectEqual(state.b, cpu.registers.b) catch {
             errored = true;
             std.debug.print("\ttesting b\n", .{});
         };
-        std.testing.expectEqual(state.c, z80.registers.c) catch {
+        std.testing.expectEqual(state.c, cpu.registers.c) catch {
             errored = true;
             std.debug.print("\ttesting c\n", .{});
         };
-        std.testing.expectEqual(state.d, z80.registers.d) catch {
+        std.testing.expectEqual(state.d, cpu.registers.d) catch {
             errored = true;
             std.debug.print("\ttesting d\n", .{});
         };
-        std.testing.expectEqual(state.e, z80.registers.e) catch {
+        std.testing.expectEqual(state.e, cpu.registers.e) catch {
             errored = true;
             std.debug.print("\ttesting e\n", .{});
         };
-        std.testing.expectEqual(state.f, z80.flags.int()) catch {
+        std.testing.expectEqual(state.f, cpu.flags.int()) catch {
             errored = true;
             std.debug.print(
                 "\ttesting flags:\n\t\texpected {}\n\t\tfound    {}\n",
-                .{ Flags.from(state.f), z80.flags },
+                .{ Flags.from(state.f), cpu.flags },
             );
         };
-        std.testing.expectEqual(state.h, z80.registers.h) catch {
+        std.testing.expectEqual(state.h, cpu.registers.h) catch {
             errored = true;
             std.debug.print("\ttesting h\n", .{});
         };
-        std.testing.expectEqual(state.l, z80.registers.l) catch {
+        std.testing.expectEqual(state.l, cpu.registers.l) catch {
             errored = true;
             std.debug.print("\ttesting l\n", .{});
         };
-        std.testing.expectEqual(state.sp, z80.registers.stack_pointer) catch {
+        std.testing.expectEqual(state.sp, cpu.registers.stack_pointer) catch {
             errored = true;
             std.debug.print("\ttesting stack pointer\n", .{});
         };
-        std.testing.expectEqual(state.pc, z80.program_counter) catch {
+        std.testing.expectEqual(state.pc, cpu.program_counter) catch {
             errored = true;
             std.debug.print("\ttesting program counter\n", .{});
         };
-        std.testing.expectEqual(state.ime == 1, z80.interrupt_master_enable) catch {
+        std.testing.expectEqual(state.ime == 1, cpu.interrupt_master_enable) catch {
             errored = true;
             std.debug.print("\ttesting ime\n", .{});
         };
@@ -140,7 +140,7 @@ const CpuState = struct {
         for (state.ram) |ram| {
             const address = ram[0];
             const value: u8 = @intCast(ram[1]);
-            std.testing.expectEqual(value, z80.mmu.readByte(address)) catch {
+            std.testing.expectEqual(value, cpu.mmu.readByte(address)) catch {
                 errored = true;
                 std.debug.print("\ttesting memory address {d}\n", .{address});
             };
