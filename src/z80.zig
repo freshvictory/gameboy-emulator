@@ -701,7 +701,7 @@ fn subtractWithCarry(z80: *Z80, operand: u8) void {
     z80.flags = .{
         .subtracted = true,
         .was_zero = z80.registers.a == 0,
-        .carried = old < operand +| carry,
+        .carried = old < operand or (old - operand) < carry,
         .half_carried = (old & 0xF) < (operand & 0xF) + carry,
     };
 }
