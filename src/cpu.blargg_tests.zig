@@ -1,11 +1,14 @@
 ///! Run Blargg's CPU instruction tests.
 ///! https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs
 const std = @import("std");
+const Timer = @import("timer.zig");
 const Cartridge = @import("cartridge.zig");
 const MMU = @import("mmu.zig");
 const CPU = @import("cpu.zig");
 
 fn run(comptime filename: []const u8) !void {
+    var timer = Timer{};
+
     var output: [100:0]u8 = [_:0]u8{0} ** 100;
     var writer = std.io.Writer.fixed(&output);
 
@@ -13,8 +16,10 @@ fn run(comptime filename: []const u8) !void {
     var rom: [romFile.len]u8 = undefined;
     @memcpy(&rom, romFile);
     const cartridge = Cartridge.init(&rom);
-    const mmu = MMU.initWithWriter(cartridge, &writer);
-    var cpu = CPU.init(.{}, mmu);
+
+    var mmu = MMU.init(cartridge, &timer);
+    mmu.serial_writer = &writer;
+    var cpu = CPU.init(mmu);
 
     const max_cycles = 100_000_000;
     var i: usize = 0;

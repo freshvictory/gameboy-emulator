@@ -1,13 +1,12 @@
 const std = @import("std");
+const Timer = @import("timer.zig");
 const MMU = @import("mmu.zig");
 
 const CPU = @This();
 
 mmu: MMU,
 
-clock: Clock = .{},
-
-registers: Registers,
+registers: Registers = .{},
 
 // Start at the cartridge's entry point
 program_counter: u16 = 0x100,
@@ -17,16 +16,6 @@ flags: Flags = .{},
 set_interrupt_after_next_instruction: bool = false,
 
 interrupt_master_enable: bool = false,
-
-const Clock = struct {
-    m: u8 = 0,
-    t: u8 = 0,
-
-    pub fn tick(self: *Clock) void {
-        self.m +%= 1;
-        self.t +%= 1 * 4;
-    }
-};
 
 pub const Registers = struct {
     a: u8 = 0,
@@ -82,9 +71,8 @@ pub const Flags = packed struct(u4) {
     }
 };
 
-pub fn init(registers: Registers, mmu: MMU) CPU {
+pub fn init(mmu: MMU) CPU {
     return .{
-        .registers = registers,
         .mmu = mmu,
     };
 }
@@ -99,6 +87,12 @@ pub fn step(cpu: *CPU) void {
 
     if (cpu.interrupt_master_enable) {
         cpu.handleInterrupt();
+    }
+}
+
+fn tick(cpu: *CPU) void {
+    if (cpu.mmu.timer.tick()) {
+        cpu.mmu.setInterrupt(.timer);
     }
 }
 
@@ -289,19 +283,19 @@ fn handleInterrupt(cpu: *CPU) void {
 
     cpu.interrupt_master_enable = false;
 
-    cpu.clock.tick();
-    cpu.clock.tick();
+    cpu.tick();
+    cpu.tick();
     cpu.call(interrupt.address());
     cpu.mmu.clearInterrupt(interrupt);
 }
 
 fn writeByte(cpu: *CPU, address: u16, value: u8) void {
-    cpu.clock.tick();
+    cpu.tick();
     cpu.mmu.writeByte(address, value);
 }
 
 fn readByte(cpu: *CPU, address: u16) u8 {
-    cpu.clock.tick();
+    cpu.tick();
     return cpu.mmu.readByte(address);
 }
 
@@ -388,14 +382,14 @@ inline fn highAddress(value: u8) u16 {
 
 /// TODO
 fn halt(cpu: *CPU) void {
-    cpu.clock.tick();
-    cpu.clock.tick();
+    cpu.tick();
+    cpu.tick();
 }
 
 /// TODO
 fn stop(cpu: *CPU) void {
-    cpu.clock.tick();
-    cpu.clock.tick();
+    cpu.tick();
+    cpu.tick();
 }
 
 /// Load the value into the given register
@@ -440,7 +434,7 @@ fn loadStackPointer(cpu: *CPU) void {
 /// Load the value into the stack pointer
 fn loadHLIntoStackPointer(cpu: *CPU) void {
     cpu.registers.stack_pointer = cpu.registers.hl();
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 /// Add a signed value to an unsigned one.
@@ -473,8 +467,8 @@ fn addToStackPointer(cpu: *CPU, operand: i8) void {
         .half_carried = half_carried,
     };
 
-    cpu.clock.tick();
-    cpu.clock.tick();
+    cpu.tick();
+    cpu.tick();
 }
 
 /// Add the signed integer with SP and store in HL
@@ -492,7 +486,7 @@ fn addToStackPointerAndLoad(cpu: *CPU, operand: i8) void {
         .half_carried = half_carried,
     };
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 fn loadAIntoHLAndIncrement(cpu: *CPU) void {
@@ -568,12 +562,12 @@ fn increment16(
 
     @field(cpu.registers, high) +%= overflowed;
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 fn incrementStackPointer(cpu: *CPU) void {
     cpu.registers.stack_pointer +%= 1;
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 /// Decrement the register by 1
@@ -614,12 +608,12 @@ fn decrement16(
 
     @field(cpu.registers, high) -%= underflowed;
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 fn decrementStackPointer(cpu: *CPU) void {
     cpu.registers.stack_pointer -%= 1;
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 /// Adjust result of arithmetic to be binary-coded decimal
@@ -690,7 +684,7 @@ fn addToHL(
     cpu.registers.h = @truncate(value >> 8);
     cpu.registers.l = @truncate(value);
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 /// Subtract value from A
@@ -1002,13 +996,13 @@ fn push(cpu: *CPU, high: u8, low: u8) void {
     cpu.registers.stack_pointer -%= 1;
     cpu.writeByte(cpu.registers.stack_pointer, low);
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 /// Set the program counter to the given address
 fn jump(cpu: *CPU, address: u16) void {
     cpu.program_counter = address;
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 fn jumpHL(cpu: *CPU) void {
@@ -1052,11 +1046,11 @@ fn @"return"(cpu: *CPU) void {
 
     cpu.program_counter = to16(high, low);
 
-    cpu.clock.tick();
+    cpu.tick();
 }
 
 fn returnIf(cpu: *CPU, condition: bool) void {
-    cpu.clock.tick();
+    cpu.tick();
 
     if (condition) cpu.@"return"();
 }
