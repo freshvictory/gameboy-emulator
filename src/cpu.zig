@@ -96,6 +96,10 @@ pub fn step(cpu: *CPU) void {
     cpu.program_counter +%= 1;
     cpu.operate(opcode);
     if (set_interrupt) cpu.interrupt_master_enable = true;
+
+    if (cpu.interrupt_master_enable) {
+        cpu.handleInterrupt();
+    }
 }
 
 fn operate(cpu: *CPU, opcode: u8) void {
@@ -278,6 +282,17 @@ fn operatePrefixed(cpu: *CPU, opcode: u8) void {
         cpu.setPrefixedResult(opcode, result);
     }
     cpu.flags = flags;
+}
+
+fn handleInterrupt(cpu: *CPU) void {
+    const interrupt = cpu.mmu.currentInterrupt() orelse return;
+
+    cpu.interrupt_master_enable = false;
+
+    cpu.clock.tick();
+    cpu.clock.tick();
+    cpu.call(interrupt.address());
+    cpu.mmu.clearInterrupt(interrupt);
 }
 
 fn writeByte(cpu: *CPU, address: u16, value: u8) void {
