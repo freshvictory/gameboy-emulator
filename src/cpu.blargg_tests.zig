@@ -1,14 +1,10 @@
 ///! Run Blargg's CPU instruction tests.
 ///! https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs
 const std = @import("std");
-const Timer = @import("timer.zig");
 const Cartridge = @import("cartridge.zig");
-const MMU = @import("mmu.zig");
-const CPU = @import("cpu.zig");
+const Gameboy = @import("root.zig");
 
 fn run(comptime filename: []const u8) !void {
-    var timer = Timer{};
-
     var output: [100:0]u8 = [_:0]u8{0} ** 100;
     var writer = std.io.Writer.fixed(&output);
 
@@ -17,14 +13,13 @@ fn run(comptime filename: []const u8) !void {
     @memcpy(&rom, romFile);
     const cartridge = Cartridge.init(&rom);
 
-    var mmu = MMU.init(cartridge, &timer);
-    mmu.serial_writer = &writer;
-    var cpu = CPU.init(mmu);
+    var gameboy = Gameboy.boot(cartridge);
+    gameboy.cpu.mmu.serial_writer = &writer;
 
     const max_cycles = 100_000_000;
     var i: usize = 0;
     while (i < max_cycles) : (i += 1) {
-        cpu.step();
+        gameboy.step();
 
         if (i % 1000 != 0) continue;
 

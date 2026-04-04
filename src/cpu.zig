@@ -1,5 +1,4 @@
 const std = @import("std");
-const Timer = @import("timer.zig");
 const MMU = @import("mmu.zig");
 
 const CPU = @This();
@@ -91,9 +90,7 @@ pub fn step(cpu: *CPU) void {
 }
 
 fn tick(cpu: *CPU) void {
-    if (cpu.mmu.timer.tick()) {
-        cpu.mmu.setInterrupt(.timer);
-    }
+    cpu.mmu.tick();
 }
 
 fn operate(cpu: *CPU, opcode: u8) void {

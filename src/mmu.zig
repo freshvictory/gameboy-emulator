@@ -6,17 +6,17 @@ const MMU = @This();
 var null_writer = std.io.Writer.Discarding.init(&.{});
 
 cartridge: Cartridge,
-timer: *Timer,
+timer: Timer,
 set_interrupts: Interrupts = .{},
 enabled_interrupts: Interrupts = .{},
 internal: [0x10000]u8 = [_]u8{0} ** 0x10000,
 
 serial_writer: *std.io.Writer = &null_writer.writer,
 
-pub fn init(cartridge: Cartridge, timer: *Timer) MMU {
+pub fn init(cartridge: Cartridge) MMU {
     return .{
         .cartridge = cartridge,
-        .timer = timer,
+        .timer = .{},
     };
 }
 
@@ -68,6 +68,11 @@ pub fn writeByte(mmu: *MMU, address: u16, value: u8) void {
 
         else => mmu.internal[address] = value,
     }
+}
+
+pub fn tick(mmu: *MMU) void {
+    const should_interrupt = mmu.timer.tick();
+    if (should_interrupt) mmu.setInterrupt(.timer);
 }
 
 /// In priority order, same as bit order.

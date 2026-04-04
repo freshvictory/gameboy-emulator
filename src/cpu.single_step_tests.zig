@@ -1,4 +1,5 @@
 const std = @import("std");
+const Gameboy = @import("root.zig");
 const Timer = @import("timer.zig");
 const Cartridge = @import("cartridge.zig");
 const CPU = @import("cpu.zig");
@@ -36,26 +37,24 @@ const TestCase = struct {
     cycles: []const std.json.Value,
 
     pub fn run(t: TestCase) !void {
-        var timer = Timer{};
-
         var cartridge_contents = [_]u8{0} ** 0x10000;
         const cartridge = Cartridge.init(&cartridge_contents);
-        var mmu = MMU.init(cartridge, &timer);
+
+        var gameboy = Gameboy.boot(cartridge);
 
         for (t.initial.ram) |ram| {
             const address = ram[0];
             const value: u8 = @intCast(ram[1]);
 
-            mmu.writeByte(address, value);
+            gameboy.cpu.mmu.writeByte(address, value);
         }
 
-        var cpu = CPU.init(mmu);
-        t.initial.apply(&cpu);
+        t.initial.apply(&gameboy.cpu);
 
-        cpu.step();
+        gameboy.step();
 
-        try t.final.check(cpu);
-        try std.testing.expectEqual(t.cycles.len, timer.m);
+        try t.final.check(gameboy.cpu);
+        try std.testing.expectEqual(t.cycles.len, gameboy.cpu.mmu.timer.m);
     }
 };
 
