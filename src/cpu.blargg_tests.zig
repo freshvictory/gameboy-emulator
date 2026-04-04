@@ -14,8 +14,9 @@ fn run(comptime filename: []const u8) !void {
     @memcpy(&rom, romFile);
     const cartridge = Cartridge.init(&rom);
 
-    var gameboy = Gameboy.boot(cartridge);
-    gameboy.cpu.mmu.serial_writer = &writer;
+    var gameboy: Gameboy = undefined;
+    gameboy.boot(cartridge);
+    gameboy.mmu.serial_writer = &writer;
 
     const max_cycles = 100_000_000;
     var i: usize = 0;

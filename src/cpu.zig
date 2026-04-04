@@ -1,9 +1,13 @@
 const std = @import("std");
-const MMU = @import("mmu.zig");
+const Interrupts = @import("interrupts.zig");
+const Memory = @import("memory.zig");
+const Timer = @import("timer.zig");
 
 const CPU = @This();
 
-mmu: MMU,
+timer: *Timer,
+memory: Memory,
+interrupts: *Interrupts,
 
 registers: Registers = .{},
 
@@ -72,9 +76,15 @@ pub const Flags = packed struct(u4) {
     }
 };
 
-pub fn init(mmu: MMU) CPU {
+pub fn init(
+    timer: *Timer,
+    memory: Memory,
+    interrupts: *Interrupts,
+) CPU {
     return .{
-        .mmu = mmu,
+        .timer = timer,
+        .memory = memory,
+        .interrupts = interrupts,
     };
 }
 
@@ -95,7 +105,8 @@ pub fn step(cpu: *CPU) void {
 }
 
 fn tick(cpu: *CPU) void {
-    cpu.mmu.tick();
+    const should_interrupt = cpu.timer.tick();
+    if (should_interrupt) cpu.interrupts.raise(.timer);
 }
 
 fn operate(cpu: *CPU, opcode: u8) void {
@@ -281,7 +292,7 @@ fn operatePrefixed(cpu: *CPU, opcode: u8) void {
 }
 
 fn handleInterrupt(cpu: *CPU) void {
-    const interrupt = cpu.mmu.currentInterrupt() orelse return;
+    const interrupt = cpu.interrupts.current() orelse return;
 
     cpu.halted = false;
 
@@ -293,18 +304,18 @@ fn handleInterrupt(cpu: *CPU) void {
         cpu.tick();
         cpu.tick();
         cpu.call(interrupt.address());
-        cpu.mmu.clearInterrupt(interrupt);
+        cpu.interrupts.clear(interrupt);
     }
 }
 
 fn writeByte(cpu: *CPU, address: u16, value: u8) void {
     cpu.tick();
-    cpu.mmu.writeByte(address, value);
+    cpu.memory.writeByte(address, value);
 }
 
 fn readByte(cpu: *CPU, address: u16) u8 {
     cpu.tick();
-    return cpu.mmu.readByte(address);
+    return cpu.memory.readByte(address);
 }
 
 fn operandPrefixed(cpu: *CPU, opcode: u8) u8 {

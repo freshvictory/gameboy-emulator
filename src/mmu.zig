@@ -1,26 +1,44 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
+const Interrupts = @import("interrupts.zig");
+const Memory = @import("memory.zig");
 const Timer = @import("timer.zig");
+
 const MMU = @This();
 
 var null_writer = std.io.Writer.Discarding.init(&.{});
 
 cartridge: Cartridge,
-timer: Timer,
-set_interrupts: Interrupts = .{},
-enabled_interrupts: Interrupts = .{},
+timer: *Timer,
+interrupts: *Interrupts,
 internal: [0x10000]u8 = [_]u8{0} ** 0x10000,
 
 serial_writer: *std.io.Writer = &null_writer.writer,
 
-pub fn init(cartridge: Cartridge) MMU {
+pub fn init(
+    cartridge: Cartridge,
+    timer: *Timer,
+    interrupts: *Interrupts,
+) MMU {
     return .{
         .cartridge = cartridge,
-        .timer = .{},
+        .timer = timer,
+        .interrupts = interrupts,
     };
 }
 
-pub fn readByte(mmu: MMU, address: u16) u8 {
+pub fn memory(mmu: *MMU) Memory {
+    return .{
+        .ptr = mmu,
+        .vtable = &.{
+            .readByte = readByte,
+            .writeByte = writeByte,
+        },
+    };
+}
+
+fn readByte(ptr: *anyopaque, address: u16) u8 {
+    const mmu: *MMU = @ptrCast(@alignCast(ptr));
     return switch (address) {
         // Cartridge/ROM
         0x0000...0x7FFF, 0xA000...0xBFFF => mmu.cartridge.readByte(address),
@@ -35,14 +53,15 @@ pub fn readByte(mmu: MMU, address: u16) u8 {
         },
 
         // Interrupts
-        0xFF0F => mmu.set_interrupts.int(),
-        0xFFFF => mmu.enabled_interrupts.int(),
+        0xFF0F => mmu.interrupts.active.int(),
+        0xFFFF => mmu.interrupts.enabled.int(),
 
         else => mmu.internal[address],
     };
 }
 
-pub fn writeByte(mmu: *MMU, address: u16, value: u8) void {
+fn writeByte(ptr: *anyopaque, address: u16, value: u8) void {
+    const mmu: *MMU = @ptrCast(@alignCast(ptr));
     switch (address) {
         // Cartridge/ROM
         0x0000...0x7FFF, 0xA000...0xBFFF => mmu.cartridge.writeByte(address, value),
@@ -63,83 +82,9 @@ pub fn writeByte(mmu: *MMU, address: u16, value: u8) void {
         },
 
         // Interrupts
-        0xFF0F => mmu.set_interrupts = Interrupts.from(value),
-        0xFFFF => mmu.enabled_interrupts = Interrupts.from(value),
+        0xFF0F => mmu.interrupts.activate(value),
+        0xFFFF => mmu.interrupts.enable(value),
 
         else => mmu.internal[address] = value,
     }
-}
-
-pub fn tick(mmu: *MMU) void {
-    const should_interrupt = mmu.timer.tick();
-    if (should_interrupt) mmu.setInterrupt(.timer);
-}
-
-/// In priority order, same as bit order.
-/// Values are their call addresses.
-pub const Interrupt = enum(u16) {
-    v_blank = 0x40,
-    lcd = 0x48,
-    timer = 0x50,
-    serial = 0x58,
-    joypad = 0x60,
-
-    pub fn address(self: Interrupt) u16 {
-        return @intFromEnum(self);
-    }
-};
-
-pub const Interrupts = packed struct(u5) {
-    v_blank: bool = false,
-    lcd: bool = false,
-    timer: bool = false,
-    serial: bool = false,
-    joypad: bool = false,
-
-    /// The highest priority interrupt currently set
-    pub fn current(self: Interrupts) ?Interrupt {
-        if (self.v_blank) return .v_blank;
-        if (self.lcd) return .lcd;
-        if (self.timer) return .timer;
-        if (self.serial) return .serial;
-        if (self.joypad) return .joypad;
-
-        return null;
-    }
-
-    pub fn set(self: *Interrupts, interrupt: Interrupt) void {
-        switch (interrupt) {
-            inline else => |i| @field(self, @tagName(i)) = true,
-        }
-    }
-
-    pub fn clear(self: *Interrupts, interrupt: Interrupt) void {
-        switch (interrupt) {
-            inline else => |i| @field(self, @tagName(i)) = false,
-        }
-    }
-
-    pub inline fn from(value: u8) Interrupts {
-        const v: u5 = @truncate(value);
-        return @bitCast(v);
-    }
-
-    pub inline fn int(self: Interrupts) u8 {
-        const value: u5 = @bitCast(self);
-        return value;
-    }
-};
-
-pub fn currentInterrupt(mmu: MMU) ?Interrupt {
-    const available = Interrupts.from(mmu.enabled_interrupts.int() & mmu.set_interrupts.int());
-
-    return available.current();
-}
-
-pub fn setInterrupt(mmu: *MMU, interrupt: Interrupt) void {
-    mmu.set_interrupts.set(interrupt);
-}
-
-pub fn clearInterrupt(mmu: *MMU, interrupt: Interrupt) void {
-    mmu.set_interrupts.clear(interrupt);
 }

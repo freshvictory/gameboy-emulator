@@ -1,9 +1,8 @@
 const std = @import("std");
-const Gameboy = @import("root.zig");
+const Interrupts = @import("interrupts.zig");
+const Memory = @import("memory.zig");
 const Timer = @import("timer.zig");
-const Cartridge = @import("cartridge.zig");
 const CPU = @import("cpu.zig");
-const MMU = @import("mmu.zig");
 const Flags = CPU.Flags;
 
 pub fn runTestsFor(comptime instruction: []const u8) !void {
@@ -37,24 +36,51 @@ const TestCase = struct {
     cycles: []const std.json.Value,
 
     pub fn run(t: TestCase) !void {
-        var cartridge_contents = [_]u8{0} ** 0x10000;
-        const cartridge = Cartridge.init(&cartridge_contents);
+        var timer = Timer{};
+        var interrupts = Interrupts{};
 
-        var gameboy = Gameboy.boot(cartridge);
+        var test_memory = TestMemory{};
+        var memory = test_memory.memory();
+
+        var cpu = CPU.init(&timer, memory, &interrupts);
 
         for (t.initial.ram) |ram| {
             const address = ram[0];
             const value: u8 = @intCast(ram[1]);
 
-            gameboy.cpu.mmu.writeByte(address, value);
+            memory.writeByte(address, value);
         }
 
-        t.initial.apply(&gameboy.cpu);
+        t.initial.apply(&cpu);
 
-        gameboy.step();
+        cpu.step();
 
-        try t.final.check(gameboy.cpu);
-        try std.testing.expectEqual(t.cycles.len, gameboy.cpu.mmu.timer.m);
+        try t.final.check(cpu, memory);
+        try std.testing.expectEqual(t.cycles.len, timer.m);
+    }
+};
+
+const TestMemory = struct {
+    buffer: [0x10000]u8 = [_]u8{0} ** 0x10000,
+
+    pub fn memory(self: *TestMemory) Memory {
+        return .{
+            .ptr = self,
+            .vtable = &.{
+                .readByte = readByte,
+                .writeByte = writeByte,
+            },
+        };
+    }
+
+    fn readByte(ptr: *anyopaque, address: u16) u8 {
+        const self: *TestMemory = @ptrCast(@alignCast(ptr));
+        return self.buffer[address];
+    }
+
+    fn writeByte(ptr: *anyopaque, address: u16, value: u8) void {
+        const self: *TestMemory = @ptrCast(@alignCast(ptr));
+        self.buffer[address] = value;
     }
 };
 
@@ -88,7 +114,7 @@ const CpuState = struct {
         cpu.interrupt_master_enable = state.ime == 1;
     }
 
-    pub fn check(state: CpuState, cpu: CPU) !void {
+    pub fn check(state: CpuState, cpu: CPU, memory: Memory) !void {
         var errored = false;
 
         std.testing.expectEqual(state.a, cpu.registers.a) catch {
@@ -142,7 +168,7 @@ const CpuState = struct {
         for (state.ram) |ram| {
             const address = ram[0];
             const value: u8 = @intCast(ram[1]);
-            std.testing.expectEqual(value, cpu.mmu.readByte(address)) catch {
+            std.testing.expectEqual(value, memory.readByte(address)) catch {
                 errored = true;
                 std.debug.print("\ttesting memory address {d}\n", .{address});
             };
