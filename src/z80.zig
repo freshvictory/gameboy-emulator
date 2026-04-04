@@ -22,8 +22,8 @@ const Clock = struct {
     t: u8 = 0,
 
     pub fn tick(self: *Clock) void {
-        self.m += 1;
-        self.t += 1 * 4;
+        self.m +%= 1;
+        self.t +%= 1 * 4;
     }
 };
 
