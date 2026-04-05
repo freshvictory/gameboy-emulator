@@ -5,7 +5,56 @@
   </head>
 
   <body>
+    <h1>Gameboy Emulator</h1>
+
+    <form id="form">
+      <label for="cartridge">Select a cartridge:</label>
+      <input id="cartridge" type="file" name="cartridge" accept=".gb" />
+
+      <button value="boot">Boot</button>
+      <button value="step">Step</button>
+    </form>
+
+    <script>
+      class Gameboy {
+        constructor(library) {
+          this.library = library;
+          this.memory = library.memory;
+        }
+
+        /** @param {File?} file */
+        async boot(file) {
+          if (!file) {
+            this.library.startWithTestCartridge();
+            return;
+          }
+
+          await this.#loadCartridge(file);
+          this.library.start();
+        }
+
+        async step() {
+          this.library.step();
+        }
+
+        /** @param {File} file */
+        async #loadCartridge(file) {
+          const pointer = this.library.getCartridgeBufferPointer();
+          const data = await file.arrayBuffer();
+          const array = new Uint8Array(
+            this.memory.buffer,
+            pointer,
+            data.byteLength,
+          );
+          array.set(data);
+        }
+      }
+    </script>
+
     <script type="module">
+      const form = document.getElementById("form");
+      if (!form) throw new Error("Missing form");
+
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
         {
@@ -14,9 +63,31 @@
           },
         },
       );
-      const { start, step } = result.instance.exports;
-      start();
-      step();
+
+      const gameboy = new Gameboy(result.instance.exports);
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const action = event.submitter.value;
+
+        switch (action) {
+          case "boot": {
+            const formData = new FormData(event.currentTarget);
+
+            const file = formData.get("cartridge");
+            if (file && !(file instanceof File)) {
+              throw new Error("File invalid or not provided");
+            }
+
+            return gameboy.boot(file);
+            break;
+          }
+          case "step": {
+            return gameboy.step();
+          }
+        }
+      });
     </script>
   </body>
 </html>
