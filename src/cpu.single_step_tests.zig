@@ -1,9 +1,9 @@
 const std = @import("std");
 const Interrupts = @import("interrupts.zig");
 const Memory = @import("memory.zig");
-const Timer = @import("timer.zig");
 const CPU = @import("cpu.zig");
 const Flags = CPU.Flags;
+const Clock = CPU.Clock;
 
 pub fn runTestsFor(comptime instruction: []const u8) !void {
     const json = @embedFile("sm83/v1/" ++ instruction ++ ".json");
@@ -36,13 +36,13 @@ const TestCase = struct {
     cycles: []const std.json.Value,
 
     pub fn run(t: TestCase) !void {
-        var timer = Timer{};
+        var timer = TestClock{};
         var interrupts = Interrupts{};
 
         var test_memory = TestMemory{};
         var memory = test_memory.memory();
 
-        var cpu = CPU.init(&timer, memory, &interrupts);
+        var cpu = CPU.init(timer.clock(), memory, &interrupts);
 
         for (t.initial.ram) |ram| {
             const address = ram[0];
@@ -57,6 +57,19 @@ const TestCase = struct {
 
         try t.final.check(cpu, memory);
         try std.testing.expectEqual(t.cycles.len, timer.m);
+    }
+};
+
+const TestClock = struct {
+    m: u8 = 0,
+
+    pub fn clock(self: *TestClock) Clock {
+        return .{ .ptr = self, .tick_fn = tick };
+    }
+
+    fn tick(ptr: *anyopaque) void {
+        const self: *TestClock = @ptrCast(@alignCast(ptr));
+        self.m +%= 1;
     }
 };
 

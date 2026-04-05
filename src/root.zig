@@ -20,7 +20,7 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge) void {
         &gameboy.interrupts,
     );
     gameboy.cpu = CPU.init(
-        &gameboy.timer,
+        .{ .ptr = gameboy, .tick_fn = tick },
         gameboy.mmu.memory(),
         &gameboy.interrupts,
     );
@@ -28,4 +28,9 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge) void {
 
 pub fn step(gameboy: *Gameboy) void {
     gameboy.cpu.step();
+}
+
+fn tick(ptr: *anyopaque) void {
+    const gameboy: *Gameboy = @ptrCast(@alignCast(ptr));
+    gameboy.timer.tick();
 }

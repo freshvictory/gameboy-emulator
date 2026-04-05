@@ -1,11 +1,10 @@
 const std = @import("std");
 const Interrupts = @import("interrupts.zig");
 const Memory = @import("memory.zig");
-const Timer = @import("timer.zig");
 
 const CPU = @This();
 
-timer: *Timer,
+clock: Clock,
 memory: Memory,
 interrupts: *Interrupts,
 
@@ -76,13 +75,22 @@ pub const Flags = packed struct(u4) {
     }
 };
 
+pub const Clock = struct {
+    ptr: *anyopaque,
+    tick_fn: *const fn (*anyopaque) void,
+
+    pub fn tick(self: Clock) void {
+        self.tick_fn(self.ptr);
+    }
+};
+
 pub fn init(
-    timer: *Timer,
+    clock: Clock,
     memory: Memory,
     interrupts: *Interrupts,
 ) CPU {
     return .{
-        .timer = timer,
+        .clock = clock,
         .memory = memory,
         .interrupts = interrupts,
     };
@@ -105,7 +113,7 @@ pub fn step(cpu: *CPU) void {
 }
 
 fn tick(cpu: *CPU) void {
-    cpu.timer.tick();
+    cpu.clock.tick();
 }
 
 fn operate(cpu: *CPU, opcode: u8) void {
