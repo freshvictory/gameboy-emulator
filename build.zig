@@ -89,6 +89,28 @@ pub fn build(b: *std.Build) void {
     // by passing `--prefix` or `-p`.
     b.installArtifact(exe);
 
+    const wasm_target = b.resolveTargetQuery(.{
+        .cpu_arch = .wasm32,
+        .os_tag = .freestanding,
+    });
+
+    const wasm_exe = b.addExecutable(.{
+        .name = "gameboy",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/web_assembly.zig"),
+            .target = wasm_target,
+            .optimize = .ReleaseSmall,
+        }),
+    });
+    wasm_exe.rdynamic = true;
+    wasm_exe.entry = .disabled;
+
+    const wasm_install = b.addInstallArtifact(wasm_exe, .{
+        .dest_dir = .{ .override = .{ .custom = "public" } },
+    });
+    const wasm_step = b.step("wasm", "Build the WebAssembly module");
+    wasm_step.dependOn(&wasm_install.step);
+
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
     // This will evaluate the `run` step rather than the default step.

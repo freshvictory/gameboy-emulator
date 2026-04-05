@@ -2,6 +2,7 @@
 
 .zig-cache/
 zig-out/
+web/public/gameboy.wasm
 
 src/blargg/
 src/sm83/
