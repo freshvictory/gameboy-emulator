@@ -21,7 +21,7 @@ fn run(comptime filename: []const u8) !void {
     const max_cycles = 100_000_000;
     var i: usize = 0;
     while (i < max_cycles) : (i += 1) {
-        gameboy.step();
+        _ = gameboy.step();
 
         if (i % 1000 != 0) continue;
 

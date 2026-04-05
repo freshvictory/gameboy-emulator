@@ -96,12 +96,12 @@ pub fn init(
     };
 }
 
-pub fn step(cpu: *CPU) void {
+pub fn step(cpu: *CPU) ?u8 {
     cpu.handleInterrupt();
 
     if (cpu.halted) {
         cpu.tick();
-        return;
+        return null;
     }
 
     const set_interrupt = cpu.set_interrupt_after_next_instruction;
@@ -110,6 +110,8 @@ pub fn step(cpu: *CPU) void {
     cpu.program_counter +%= 1;
     cpu.operate(opcode);
     if (set_interrupt) cpu.interrupt_master_enable = true;
+
+    return opcode;
 }
 
 fn tick(cpu: *CPU) void {

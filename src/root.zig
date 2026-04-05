@@ -26,8 +26,8 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge) void {
     );
 }
 
-pub fn step(gameboy: *Gameboy) void {
-    gameboy.cpu.step();
+pub fn step(gameboy: *Gameboy) ?u8 {
+    return gameboy.cpu.step();
 }
 
 fn tick(ptr: *anyopaque) void {

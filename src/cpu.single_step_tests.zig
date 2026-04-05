@@ -53,7 +53,7 @@ const TestCase = struct {
 
         t.initial.apply(&cpu);
 
-        cpu.step();
+        _ = cpu.step();
 
         try t.final.check(cpu, memory);
         try std.testing.expectEqual(t.cycles.len, timer.m);
