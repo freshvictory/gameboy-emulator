@@ -2,6 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8" />
+
+    <style>
+      output {
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
   </head>
 
   <body>
@@ -15,11 +21,73 @@
       <button value="step">Step</button>
     </form>
 
+    <output id="output" for="form">
+      <h2>Opcode</h2>
+      <p id="opcode"></p>
+
+      <h2>CPU</h2>
+
+      <dl>
+        <dt>Halted</dt>
+        <dd id="halted">false</dd>
+
+        <dt>Interrupt master enable</dt>
+        <dd id="interrupt-master-enable">false</dd>
+      </dl>
+
+      <h3>Registers</h3>
+      <dl>
+        <dt>A</dt>
+        <dd id="register:a">0</dd>
+
+        <dt>B</dt>
+        <dd id="register:b">0</dd>
+
+        <dt>C</dt>
+        <dd id="register:c">0</dd>
+
+        <dt>D</dt>
+        <dd id="register:d">0</dd>
+
+        <dt>E</dt>
+        <dd id="register:e">0</dd>
+
+        <dt>H</dt>
+        <dd id="register:h">0</dd>
+
+        <dt>L</dt>
+        <dd id="register:l">0</dd>
+
+        <dt>Stack pointer</dt>
+        <dd id="register:stack-pointer">0</dd>
+
+        <dt>Program counter</dt>
+        <dd id="program-counter">0</dd>
+      </dl>
+
+      <h3>Flags</h3>
+      <dl>
+        <dt>Carried</dt>
+        <dd id="carried">false</dd>
+
+        <dt>Half carried</dt>
+        <dd id="half-carried">false</dd>
+
+        <dt>Subtracted</dt>
+        <dd id="subtracted">false</dd>
+
+        <dt>Was zero</dt>
+        <dd id="was-zero">false</dd>
+      </dl>
+    </output>
+
     <script>
       class Gameboy {
         constructor(library) {
           this.library = library;
           this.memory = library.memory;
+          const debugPointer = library.getDebugStatePointer();
+          this.debugView = new DataView(this.memory.buffer, debugPointer);
         }
 
         /** @param {File?} file */
@@ -33,8 +101,55 @@
           this.library.start();
         }
 
-        async step() {
-          this.library.step();
+        step() {
+          return this.library.step();
+        }
+
+        debug() {
+          const stackPointer = this.debugView.getUint16(0, true);
+          const programCounter = this.debugView.getUint16(2, true);
+          const flags = this.debugView.getUint8(11);
+          const enabledInterrupts = this.debugView.getUint8(17);
+          const activeInterrupts = this.debugView.getUint8(18);
+          return {
+            cpu: {
+              registers: {
+                a: this.debugView.getUint8(4),
+                b: this.debugView.getUint8(5),
+                c: this.debugView.getUint8(6),
+                d: this.debugView.getUint8(7),
+                e: this.debugView.getUint8(8),
+                h: this.debugView.getUint8(9),
+                l: this.debugView.getUint8(10),
+                stackPointer,
+              },
+              programCounter,
+              flags: {
+                carried: (flags & 0x10) !== 0,
+                halfCarried: (flags & 0x20) !== 0,
+                subtracted: (flags & 0x30) !== 0,
+                wasZero: (flags & 0x40) !== 0,
+              },
+              halted: this.debugView.getUint8(19) !== 0,
+              interruptMasterEnable: this.debugView.getUint8(20) !== 0,
+            },
+            interrupts: {
+              active: {
+                vBlank: (activeInterrupts & 0b1) !== 0,
+                lcd: (activeInterrupts & 0b10) !== 0,
+                timer: (activeInterrupts & 0b100) !== 0,
+                serial: (activeInterrupts & 0b1000) !== 0,
+                joypad: (activeInterrupts & 0b10000) !== 0,
+              },
+              enabled: {
+                vBlank: (enabledInterrupts & 0b1) !== 0,
+                lcd: (enabledInterrupts & 0b10) !== 0,
+                timer: (enabledInterrupts & 0b100) !== 0,
+                serial: (enabledInterrupts & 0b1000) !== 0,
+                joypad: (enabledInterrupts & 0b10000) !== 0,
+              },
+            },
+          };
         }
 
         /** @param {File} file */
@@ -55,18 +170,16 @@
       const form = document.getElementById("form");
       if (!form) throw new Error("Missing form");
 
+      const output = document.getElementById("output");
+      if (!output) throw new Error("Missing output element");
+
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
-        {
-          env: {
-            print: (clock) => console.log(`M cycles: ${clock}`),
-          },
-        },
       );
 
       const gameboy = new Gameboy(result.instance.exports);
 
-      form.addEventListener("submit", function (event) {
+      form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const action = event.submitter.value;
@@ -80,14 +193,54 @@
               throw new Error("File invalid or not provided");
             }
 
-            return gameboy.boot(file);
-            break;
+            await gameboy.boot(file);
+
+            debug(gameboy.debug());
+            return;
           }
           case "step": {
-            return gameboy.step();
+            const opcode = gameboy.step();
+
+            debug(gameboy.debug(), opcode);
+            return;
           }
         }
       });
+
+      function debug(info, opcode) {
+        debugCPU(info.cpu);
+        document.getElementById("opcode").textContent =
+          opcode?.toString(16) ?? "";
+      }
+
+      function debugCPU(cpu) {
+        debugRegisters(cpu.registers);
+        document.getElementById("program-counter").textContent =
+          cpu.programCounter;
+
+        document.getElementById("halted").textContent = cpu.halted;
+        document.getElementById("interrupt-master-enable").textContent =
+          cpu.interruptMasterEnable;
+
+        document.getElementById("carried").textContent = cpu.flags.carried;
+        document.getElementById("half-carried").textContent =
+          cpu.flags.halfCarried;
+        document.getElementById("subtracted").textContent =
+          cpu.flags.subtracted;
+        document.getElementById("was-zero").textContent = cpu.flags.wasZero;
+      }
+
+      function debugRegisters(registers) {
+        document.getElementById("register:a").textContent = registers.a;
+        document.getElementById("register:b").textContent = registers.b;
+        document.getElementById("register:c").textContent = registers.c;
+        document.getElementById("register:d").textContent = registers.d;
+        document.getElementById("register:e").textContent = registers.e;
+        document.getElementById("register:h").textContent = registers.h;
+        document.getElementById("register:l").textContent = registers.b;
+        document.getElementById("register:stack-pointer").textContent =
+          registers.stackPointer;
+      }
     </script>
   </body>
 </html>
