@@ -15,7 +15,13 @@
 
     <form id="form">
       <label for="cartridge">Select a cartridge:</label>
-      <input id="cartridge" type="file" name="cartridge" accept=".gb" />
+      <input
+        id="cartridge"
+        type="file"
+        name="cartridge"
+        required
+        accept=".gb"
+      />
 
       <button value="boot">Boot</button>
       <button value="step">Step</button>
@@ -92,13 +98,8 @@
 
         /** @param {File?} file */
         async boot(file) {
-          if (!file) {
-            this.library.startWithTestCartridge();
-            return;
-          }
-
-          await this.#loadCartridge(file);
-          this.library.start();
+          const length = await this.#loadCartridge(file);
+          this.library.start(length);
         }
 
         step() {
@@ -161,7 +162,9 @@
             pointer,
             data.byteLength,
           );
-          array.set(data);
+          array.set(new Uint8Array(data));
+
+          return data.byteLength;
         }
       }
     </script>
