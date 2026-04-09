@@ -12,17 +12,8 @@ export fn getCartridgeBufferPointer() [*]u8 {
 var gameboy: Gameboy = undefined;
 
 export fn start(cartridge_length: u32) void {
-    const cartridge = Cartridge.init(cartridge_buffer[0..cartridge_length]);
-    gameboy.boot(cartridge);
-    updateDebugState();
-}
-
-export fn startWithTestCartridge() void {
-    const romFile = @embedFile("blargg/03-op sp,hl.gb");
-    var rom: [romFile.len]u8 = undefined;
-    @memcpy(&rom, romFile);
-    const cartridge = Cartridge.init(&rom);
-
+    const contents = cartridge_buffer[0..cartridge_length];
+    const cartridge = Cartridge.init(contents);
     gameboy.boot(cartridge);
     updateDebugState();
 }

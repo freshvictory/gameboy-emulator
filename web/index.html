@@ -28,6 +28,8 @@
       />
 
       <button value="boot">Boot</button>
+      <button value="play">Play</button>
+      <button value="pause">Pause</button>
       <button value="step">Step</button>
     </form>
 
@@ -92,12 +94,48 @@
     </output>
 
     <script>
+      function debug(info, opcode) {
+        debugCPU(info.cpu);
+        document.getElementById("opcode").textContent =
+          opcode?.toString(16) ?? "";
+      }
+
+      function debugCPU(cpu) {
+        debugRegisters(cpu.registers);
+        document.getElementById("program-counter").textContent =
+          cpu.programCounter;
+
+        document.getElementById("halted").textContent = cpu.halted;
+        document.getElementById("interrupt-master-enable").textContent =
+          cpu.interruptMasterEnable;
+
+        document.getElementById("carried").textContent = cpu.flags.carried;
+        document.getElementById("half-carried").textContent =
+          cpu.flags.halfCarried;
+        document.getElementById("subtracted").textContent =
+          cpu.flags.subtracted;
+        document.getElementById("was-zero").textContent = cpu.flags.wasZero;
+      }
+
+      function debugRegisters(registers) {
+        document.getElementById("register:a").textContent = registers.a;
+        document.getElementById("register:b").textContent = registers.b;
+        document.getElementById("register:c").textContent = registers.c;
+        document.getElementById("register:d").textContent = registers.d;
+        document.getElementById("register:e").textContent = registers.e;
+        document.getElementById("register:h").textContent = registers.h;
+        document.getElementById("register:l").textContent = registers.l;
+        document.getElementById("register:stack-pointer").textContent =
+          registers.stackPointer;
+      }
+
       class Gameboy {
         constructor(library) {
           this.library = library;
           this.memory = library.memory;
           const debugPointer = library.getDebugStatePointer();
           this.debugView = new DataView(this.memory.buffer, debugPointer);
+          this.animationId = -1;
         }
 
         /** @param {File?} file */
@@ -106,8 +144,21 @@
           this.library.start(length);
         }
 
+        play() {
+          const step = () => {
+            this.step();
+            this.animationId = requestAnimationFrame(step);
+          };
+          this.animationId = requestAnimationFrame(step);
+        }
+
+        pause() {
+          cancelAnimationFrame(this.animationId);
+        }
+
         step() {
-          return this.library.step();
+          const opcode = this.library.step();
+          debug(this.debug(), opcode);
         }
 
         debug() {
@@ -205,49 +256,20 @@
             debug(gameboy.debug());
             return;
           }
+          case "play": {
+            gameboy.play();
+            return;
+          }
+          case "pause": {
+            gameboy.pause();
+            return;
+          }
           case "step": {
-            const opcode = gameboy.step();
-
-            debug(gameboy.debug(), opcode);
+            gameboy.step();
             return;
           }
         }
       });
-
-      function debug(info, opcode) {
-        debugCPU(info.cpu);
-        document.getElementById("opcode").textContent =
-          opcode?.toString(16) ?? "";
-      }
-
-      function debugCPU(cpu) {
-        debugRegisters(cpu.registers);
-        document.getElementById("program-counter").textContent =
-          cpu.programCounter;
-
-        document.getElementById("halted").textContent = cpu.halted;
-        document.getElementById("interrupt-master-enable").textContent =
-          cpu.interruptMasterEnable;
-
-        document.getElementById("carried").textContent = cpu.flags.carried;
-        document.getElementById("half-carried").textContent =
-          cpu.flags.halfCarried;
-        document.getElementById("subtracted").textContent =
-          cpu.flags.subtracted;
-        document.getElementById("was-zero").textContent = cpu.flags.wasZero;
-      }
-
-      function debugRegisters(registers) {
-        document.getElementById("register:a").textContent = registers.a;
-        document.getElementById("register:b").textContent = registers.b;
-        document.getElementById("register:c").textContent = registers.c;
-        document.getElementById("register:d").textContent = registers.d;
-        document.getElementById("register:e").textContent = registers.e;
-        document.getElementById("register:h").textContent = registers.h;
-        document.getElementById("register:l").textContent = registers.b;
-        document.getElementById("register:stack-pointer").textContent =
-          registers.stackPointer;
-      }
     </script>
   </body>
 </html>
