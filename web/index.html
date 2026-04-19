@@ -8,6 +8,17 @@
         color-scheme: light dark;
       }
 
+      canvas {
+        display: block;
+
+        inline-size: 320px;
+        block-size: 288px;
+        image-rendering: pixelated;
+
+        background-color: black;
+        border: 1px solid currentColor;
+      }
+
       output {
         font-variant-numeric: tabular-nums;
       }
@@ -32,6 +43,8 @@
       <button value="pause">Pause</button>
       <button value="step">Step</button>
     </form>
+
+    <canvas id="canvas" width="160" height="144"></canvas>
 
     <output id="output" for="form">
       <h2>Opcode</h2>
@@ -130,7 +143,14 @@
       }
 
       class Gameboy {
-        constructor(library) {
+        /**
+         * @param {WebAssembly.Exports} library
+         * @param {HTMLCanvasElement | OffscreenCanvas} canvas
+         */
+        constructor(library, canvas) {
+          this.context = canvas.getContext("2d", { alpha: false });
+          this.context.imageSmoothingEnabled = false;
+
           this.library = library;
           this.memory = library.memory;
           const debugPointer = library.getDebugStatePointer();
@@ -231,11 +251,14 @@
       const output = document.getElementById("output");
       if (!output) throw new Error("Missing output element");
 
+      /** @type {HTMLCanvasElement | null} */
+      const canvas = document.getElementById("canvas");
+
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
       );
 
-      const gameboy = new Gameboy(result.instance.exports);
+      const gameboy = new Gameboy(result.instance.exports, canvas);
 
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
