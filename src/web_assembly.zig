@@ -49,6 +49,10 @@ export fn step() u8 {
     return opcode orelse 0;
 }
 
+export fn frame() void {
+    gameboy.frame();
+}
+
 var debug_state: DebugState = undefined;
 
 export fn getDebugStatePointer() *DebugState {

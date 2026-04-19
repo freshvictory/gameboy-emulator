@@ -9,6 +9,8 @@ const CPU = @import("cpu.zig");
 
 const Gameboy = @This();
 
+const cycles_per_frame = 17_556;
+
 interrupts: Interrupts = .{},
 timer: Timer,
 gpu: GPU,
@@ -32,6 +34,21 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge, lcd: Lcd) void {
         gameboy.mmu.memory(),
         &gameboy.interrupts,
     );
+}
+
+pub fn frame(gameboy: *Gameboy) void {
+    var i: usize = 0;
+    while (i < cycles_per_frame) {
+        const pre_cycles: usize = gameboy.timer.m;
+        _ = gameboy.cpu.step();
+        const post_cycles: usize = gameboy.timer.m;
+        const total_cycles = if (pre_cycles < post_cycles)
+            post_cycles - pre_cycles
+        else
+            post_cycles + (256 - pre_cycles);
+
+        i += total_cycles;
+    }
 }
 
 pub fn step(gameboy: *Gameboy) ?u8 {

@@ -166,11 +166,11 @@
         }
 
         play() {
-          const step = () => {
-            this.step();
-            this.animationId = requestAnimationFrame(step);
+          const frame = () => {
+            this.frame();
+            this.animationId = requestAnimationFrame(frame);
           };
-          this.animationId = requestAnimationFrame(step);
+          this.animationId = requestAnimationFrame(frame);
         }
 
         pause() {
@@ -180,6 +180,10 @@
         step() {
           const opcode = this.library.step();
           debug(this.debug(), opcode);
+        }
+
+        frame() {
+          this.library.frame();
         }
 
         /**
