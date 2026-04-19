@@ -7,7 +7,7 @@ const Gameboy = @import("root.zig");
 
 fn run(comptime filename: []const u8) !void {
     var output: [100:0]u8 = [_:0]u8{0} ** 100;
-    var writer = std.io.Writer.fixed(&output);
+    var writer = std.Io.Writer.fixed(&output);
 
     const romFile = @embedFile("blargg/" ++ filename ++ ".gb");
     var rom: [romFile.len]u8 = undefined;

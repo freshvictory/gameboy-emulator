@@ -6,7 +6,7 @@ const Timer = @import("timer.zig");
 
 const MMU = @This();
 
-var null_writer = std.io.Writer.Discarding.init(&.{});
+var null_writer = std.Io.Writer.Discarding.init(&.{});
 
 cartridge: Cartridge,
 timer: *Timer,
@@ -35,7 +35,7 @@ infrared: u8 = 0,
 color_palettes: [4]u8 = [_]u8{0} ** 4,
 object_priorty_mode: u8 = 0,
 
-serial_writer: *std.io.Writer = &null_writer.writer,
+serial_writer: *std.Io.Writer = &null_writer.writer,
 
 pub fn init(
     cartridge: Cartridge,
