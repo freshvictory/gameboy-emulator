@@ -81,6 +81,7 @@ fn updateDebugState() void {
         .timer_control = control,
         .enabled_interrupts = gameboy.interrupts.enabled.int(),
         .active_interrupts = gameboy.interrupts.active.int(),
+        .gpu_mode = @intFromEnum(gameboy.gpu.mode),
     };
 }
 
@@ -104,4 +105,5 @@ const DebugState = extern struct {
     active_interrupts: u8, // 18
     halted: bool, // 19
     interrupt_master_enable: bool, // 20
+    gpu_mode: u8, // 21
 };

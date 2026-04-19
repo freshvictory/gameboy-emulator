@@ -104,11 +104,15 @@
         <dt>Was zero</dt>
         <dd id="was-zero">false</dd>
       </dl>
+
+      <h2>GPU</h2>
+      <p id="mode"></p>
     </output>
 
     <script>
       function debug(info, opcode) {
         debugCPU(info.cpu);
+        debugGPU(info.gpu);
         document.getElementById("opcode").textContent =
           opcode?.toString(16) ?? "";
       }
@@ -140,6 +144,10 @@
         document.getElementById("register:l").textContent = registers.l;
         document.getElementById("register:stack-pointer").textContent =
           registers.stackPointer;
+      }
+
+      function debugGPU(gpu) {
+        document.getElementById("mode").textContent = gpu.mode;
       }
 
       class Gameboy {
@@ -212,6 +220,7 @@
           const flags = this.debugView.getUint8(11);
           const enabledInterrupts = this.debugView.getUint8(17);
           const activeInterrupts = this.debugView.getUint8(18);
+          const gpuMode = this.debugView.getUint8(21);
           return {
             cpu: {
               registers: {
@@ -249,6 +258,16 @@
                 serial: (enabledInterrupts & 0b1000) !== 0,
                 joypad: (enabledInterrupts & 0b10000) !== 0,
               },
+            },
+            gpu: {
+              mode:
+                gpuMode === 0
+                  ? "horizontal blank"
+                  : gpuMode === 1
+                    ? "vertical blank"
+                    : gpuMode === 2
+                      ? "drawing"
+                      : "finding objects",
             },
           };
         }
