@@ -169,7 +169,14 @@
 
         /** @param {File?} file */
         async boot(file) {
+          this.pause();
           const length = await this.#loadCartridge(file);
+          this.context.clearRect(
+            0,
+            0,
+            this.context.canvas.width,
+            this.context.canvas.height,
+          );
           this.library.start(length);
         }
 
@@ -186,6 +193,7 @@
         }
 
         step() {
+          this.pause();
           const opcode = this.library.step();
           debug(this.debug(), opcode);
         }
