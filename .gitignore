@@ -4,5 +4,7 @@
 zig-out/
 web/public/gameboy.wasm
 
+games/
+
 src/blargg/
 src/sm83/
