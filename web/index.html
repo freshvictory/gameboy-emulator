@@ -155,6 +155,7 @@
           this.memory = library.memory;
           const debugPointer = library.getDebugStatePointer();
           this.debugView = new DataView(this.memory.buffer, debugPointer);
+          this.scanlinePointer = library.getScanlinePointer();
           this.animationId = -1;
         }
 
@@ -179,6 +180,26 @@
         step() {
           const opcode = this.library.step();
           debug(this.debug(), opcode);
+        }
+
+        /**
+         * @param {number} row
+         */
+        drawScanline(row) {
+          const scanline = new Uint8ClampedArray(
+            this.memory.buffer,
+            this.scanlinePointer,
+            160,
+          );
+          const imageData = new ImageData(scanline.length, 1);
+          for (let i = 0; i < imageData.data.length; i += 4) {
+            const grayscale = Math.floor((scanline[i / 4] / 3) * 255);
+            imageData.data[i] = grayscale;
+            imageData.data[i + 1] = grayscale;
+            imageData.data[i + 2] = grayscale;
+            imageData.data[i + 3] = 255;
+          }
+          this.context.putImageData(imageData, 0, row);
         }
 
         debug() {
@@ -256,6 +277,13 @@
 
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
+        {
+          env: {
+            drawScanline(row) {
+              gameboy.drawScanline(row);
+            },
+          },
+        },
       );
 
       const gameboy = new Gameboy(result.instance.exports, canvas);

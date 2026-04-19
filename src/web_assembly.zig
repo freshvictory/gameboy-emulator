@@ -2,6 +2,13 @@ const std = @import("std");
 const Cartridge = @import("cartridge.zig");
 const Gameboy = @import("root.zig");
 
+var scanline: [160]u2 = [_]u2{0} ** 160;
+export fn getScanlinePointer() *[160]u2 {
+    return &scanline;
+}
+
+extern fn drawScanline(row: u8) void;
+
 const MAX_CARTRIDGE_LENGTH = 8 * 1024 * 1024;
 var cartridge_buffer: [MAX_CARTRIDGE_LENGTH]u8 = undefined;
 
