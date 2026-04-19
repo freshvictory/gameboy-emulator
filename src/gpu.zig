@@ -302,7 +302,8 @@ fn layerPixels(gpu: *GPU, layer: Layer) [256][256]u2 {
             const column_start = column * 8;
             for (tile.pixels, 0..) |pixel_row, i| {
                 for (pixel_row, 0..) |pixel, j| {
-                    pixels[row_start + i][column_start + j] = pixel;
+                    const color = gpu.layer_palette.colorOf(pixel);
+                    pixels[row_start + i][column_start + j] = @intFromEnum(color);
                 }
             }
         }
