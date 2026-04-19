@@ -15,12 +15,16 @@ fn run(comptime filename: []const u8) !void {
     const cartridge = Cartridge.init(&rom);
 
     var gameboy: Gameboy = undefined;
-    gameboy.boot(cartridge);
+    gameboy.boot(cartridge, .{ .ptr = undefined, .draw = draw });
     gameboy.mmu.serial_writer = &writer;
 
     const max_cycles = 100_000_000;
     var i: usize = 0;
     while (i < max_cycles) : (i += 1) {
+        // The test roms turn the LCD on as they render to the screen,
+        // but the tests don't actually need GPU behavior, so running
+        // graphics just slows everything down.
+        gameboy.gpu.lcd.enabled = false;
         _ = gameboy.step();
 
         if (i % 1000 != 0) continue;
@@ -39,6 +43,12 @@ fn run(comptime filename: []const u8) !void {
     } else {
         return error.TimedOut;
     }
+}
+
+fn draw(self: *anyopaque, row: u8, pixels: [160]u2) void {
+    _ = self;
+    _ = row;
+    _ = pixels;
 }
 
 test "Special instructions" {

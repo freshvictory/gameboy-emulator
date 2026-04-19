@@ -1,5 +1,6 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
+const Lcd = @import("gpu.zig").Lcd;
 const Gameboy = @import("root.zig");
 
 var scanline: [160]u2 = [_]u2{0} ** 160;
@@ -8,6 +9,21 @@ export fn getScanlinePointer() *[160]u2 {
 }
 
 extern fn drawScanline(row: u8) void;
+
+const CanvasLcd = struct {
+    pub fn lcd(self: *CanvasLcd) Lcd {
+        return .{
+            .ptr = self,
+            .draw = draw,
+        };
+    }
+
+    pub fn draw(ptr: *anyopaque, row: u8, pixels: [160]u2) void {
+        _ = ptr;
+        @memcpy(&scanline, &pixels);
+        drawScanline(row);
+    }
+};
 
 const MAX_CARTRIDGE_LENGTH = 8 * 1024 * 1024;
 var cartridge_buffer: [MAX_CARTRIDGE_LENGTH]u8 = undefined;
@@ -21,7 +37,8 @@ var gameboy: Gameboy = undefined;
 export fn start(cartridge_length: u32) void {
     const contents = cartridge_buffer[0..cartridge_length];
     const cartridge = Cartridge.init(contents);
-    gameboy.boot(cartridge);
+    var canvas_lcd = CanvasLcd{};
+    gameboy.boot(cartridge, canvas_lcd.lcd());
     updateDebugState();
 }
 

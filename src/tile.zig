@@ -2,7 +2,7 @@ const std = @import("std");
 
 const Tile = @This();
 
-pixels: [8][8]u2,
+pixels: [8][8]u2 = [_][8]u2{[_]u2{0} ** 8} ** 8,
 
 /// Each row is two bytes. The first byte
 /// is each lower bit of each pixel, and the second

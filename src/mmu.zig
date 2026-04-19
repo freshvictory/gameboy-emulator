@@ -3,6 +3,7 @@ const Cartridge = @import("cartridge.zig");
 const Interrupts = @import("interrupts.zig");
 const Memory = @import("memory.zig");
 const Timer = @import("timer.zig");
+const GPU = @import("gpu.zig");
 
 const MMU = @This();
 
@@ -11,9 +12,8 @@ var null_writer = std.Io.Writer.Discarding.init(&.{});
 cartridge: Cartridge,
 timer: *Timer,
 interrupts: *Interrupts,
+gpu: *GPU,
 
-video_ram: [8192]u8 = [_]u8{0} ** 8192,
-video_ram_bank: u8 = 0,
 video_ram_dma: [5]u8 = [_]u8{0} ** 5,
 
 working_ram: [8192]u8 = [_]u8{0} ** 8192,
@@ -27,7 +27,6 @@ joypad: u8 = 0,
 serial: [2]u8 = .{ 0, 0 },
 audio: [23]u8 = [_]u8{0} ** 23,
 wave_pattern: [16]u8 = [_]u8{0} ** 16,
-lcd: [11]u8 = [_]u8{0} ** 11,
 key_0: u8 = 0,
 key_1: u8 = 0,
 boot_mapping: u8 = 0,
@@ -41,11 +40,13 @@ pub fn init(
     cartridge: Cartridge,
     timer: *Timer,
     interrupts: *Interrupts,
+    gpu: *GPU,
 ) MMU {
     return .{
         .cartridge = cartridge,
         .timer = timer,
         .interrupts = interrupts,
+        .gpu = gpu,
     };
 }
 
@@ -65,10 +66,27 @@ fn readByte(ptr: *anyopaque, address: u16) u8 {
         // Cartridge/ROM
         0x0000...0x7FFF, 0xA000...0xBFFF => mmu.cartridge.readByte(address),
 
-        // Video RAM
-        0x8000...0x9FFF => mmu.video_ram[address - 0x8000],
-        0xFF4F => mmu.video_ram_bank,
+        // Graphics
+        0x8000...0x97FF => mmu.gpu.readTileData(address - 0x8000),
+        0x9800...0x9BFF => mmu.gpu.tile_map_low[address - 0x9800],
+        0x9C00...0x9FFF => mmu.gpu.tile_map_high[address - 0x9C00],
+
+        0xFF40 => mmu.gpu.lcdControl().int(),
+        0xFF41 => mmu.gpu.lcdStatus().int(),
+        0xFF44 => mmu.gpu.current_scanline,
+        0xFF45 => mmu.gpu.scanline_compare,
+
+        // 0xFF4F => @intCast(mmu.gpu.video_ram_bank),
         0xFF51...0xFF55 => mmu.video_ram_dma[address - 0xFF51],
+
+        0xFF47 => mmu.gpu.layer_palette.int(),
+        0xFF48 => mmu.gpu.object_palette_0.int(),
+        0xFF49 => mmu.gpu.object_palette_1.int(),
+
+        0xFF42 => mmu.gpu.background.scroll_y,
+        0xFF43 => mmu.gpu.background.scroll_x,
+        0xFF4A => mmu.gpu.window.scroll_y,
+        0xFF4B => mmu.gpu.window.scroll_x,
 
         // Working RAM
         0xC000...0xDFFF => mmu.working_ram[address - 0xC000],
@@ -103,10 +121,7 @@ fn readByte(ptr: *anyopaque, address: u16) u8 {
         0xFF10...0xFF26 => mmu.audio[address - 0xFF10],
 
         // Wave pattern
-        0xFF30...0xFF3F => mmu.wave_pattern[address - 0xFF40],
-
-        // LCD
-        0xFF40...0xFF4B => mmu.lcd[address - 0xFF40],
+        0xFF30...0xFF3F => mmu.wave_pattern[address - 0xFF30],
 
         // Keys
         0xFF4C => mmu.key_0,
@@ -141,10 +156,28 @@ fn writeByte(ptr: *anyopaque, address: u16, value: u8) void {
         // Cartridge/ROM
         0x0000...0x7FFF, 0xA000...0xBFFF => mmu.cartridge.writeByte(address, value),
 
-        // Video RAM
-        0x8000...0x9FFF => mmu.video_ram[address - 0x8000] = value,
-        0xFF4F => mmu.video_ram_bank = value,
+        // Graphics
+        0x8000...0x97FF => mmu.gpu.writeTileData(address - 0x8000, value),
+        0x9800...0x9BFF => mmu.gpu.tile_map_low[address - 0x9800] = value,
+        0x9C00...0x9FFF => mmu.gpu.tile_map_high[address - 0x9C00] = value,
+        0xFF40 => mmu.gpu.applyLcdControl(.from(value)),
+        0xFF41 => mmu.gpu.applyLcdStatus(.from(value)),
+
+        // gpu.current_scanline is read only
+        0xFF44 => {},
+        0xFF45 => mmu.gpu.scanline_compare = value,
+
+        // 0xFF4F => mmu.gpu.video_ram_bank = @truncate(value),
         0xFF51...0xFF55 => mmu.video_ram_dma[address - 0xFF51] = value,
+
+        0xFF47 => mmu.gpu.layer_palette = .from(value),
+        0xFF48 => mmu.gpu.object_palette_0 = .from(value),
+        0xFF49 => mmu.gpu.object_palette_1 = .from(value),
+
+        0xFF42 => mmu.gpu.background.scroll_y = value,
+        0xFF43 => mmu.gpu.background.scroll_x = value,
+        0xFF4A => mmu.gpu.window.scroll_y = value,
+        0xFF4B => mmu.gpu.window.scroll_x = value,
 
         // Working RAM
         0xC000...0xDFFF => mmu.working_ram[address - 0xC000] = value,
@@ -183,9 +216,6 @@ fn writeByte(ptr: *anyopaque, address: u16, value: u8) void {
 
         // Wave pattern
         0xFF30...0xFF3F => mmu.wave_pattern[address - 0xFF40] = value,
-
-        // LCD
-        0xFF40...0xFF4B => mmu.lcd[address - 0xFF40] = value,
 
         // Keys
         0xFF4C => mmu.key_0 = value,
