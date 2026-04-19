@@ -41,6 +41,7 @@
       <button value="boot">Boot</button>
       <button value="play">Play</button>
       <button value="pause">Pause</button>
+      <button value="frame">Frame</button>
       <button value="step">Step</button>
     </form>
 
@@ -169,7 +170,6 @@
 
         /** @param {File?} file */
         async boot(file) {
-          this.pause();
           const length = await this.#loadCartridge(file);
           this.context.clearRect(
             0,
@@ -193,7 +193,6 @@
         }
 
         step() {
-          this.pause();
           const opcode = this.library.step();
           debug(this.debug(), opcode);
         }
@@ -333,6 +332,7 @@
               throw new Error("File invalid or not provided");
             }
 
+            gameboy.pause();
             await gameboy.boot(file);
 
             debug(gameboy.debug());
@@ -346,7 +346,13 @@
             gameboy.pause();
             return;
           }
+          case "frame": {
+            gameboy.pause();
+            gameboy.frame();
+            return;
+          }
           case "step": {
+            gameboy.pause();
             gameboy.step();
             return;
           }
