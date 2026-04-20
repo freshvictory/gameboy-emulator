@@ -1,14 +1,16 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
 const Lcd = @import("gpu.zig").Lcd;
+const MonoColor = @import("gpu.zig").MonoColor;
 const Gameboy = @import("root.zig");
 
-var scanline: [160]u2 = [_]u2{0} ** 160;
-export fn getScanlinePointer() *[160]u2 {
-    return &scanline;
-}
+const frame_buffer_size = 160 * 144 * 4;
 
-extern fn drawScanline(row: u8) void;
+var frame_buffer: [frame_buffer_size]u8 = [_]u8{0} ** frame_buffer_size;
+
+export fn getFramePointer() *[frame_buffer_size]u8 {
+    return &frame_buffer;
+}
 
 const CanvasLcd = struct {
     pub fn lcd(self: *CanvasLcd) Lcd {
@@ -18,10 +20,28 @@ const CanvasLcd = struct {
         };
     }
 
-    pub fn draw(ptr: *anyopaque, row: u8, pixels: [160]u2) void {
+    pub fn draw(ptr: *anyopaque, row: u8, pixels: [160]MonoColor) void {
         _ = ptr;
-        @memcpy(&scanline, &pixels);
-        drawScanline(row);
+        const row_16: u16 = row;
+        const row_offset: u16 = 160 * 4 * row_16;
+        for (pixels, 0..) |pixel, i| {
+            const color = grayscale(pixel);
+
+            const offset = row_offset + i * 4;
+            frame_buffer[offset] = 0;
+            frame_buffer[offset + 1] = 0;
+            frame_buffer[offset + 2] = 0;
+            frame_buffer[offset + 3] = color;
+        }
+    }
+
+    inline fn grayscale(color: MonoColor) u8 {
+        return switch (color) {
+            .black => 255,
+            .dark_gray => 170,
+            .light_gray => 85,
+            .white => 0,
+        };
     }
 };
 

@@ -164,7 +164,21 @@
           this.memory = library.memory;
           const debugPointer = library.getDebugStatePointer();
           this.debugView = new DataView(this.memory.buffer, debugPointer);
-          this.scanlinePointer = library.getScanlinePointer();
+
+          const cartridgePointer = library.getCartridgeBufferPointer();
+          this.cartridgeBuffer = new Uint8Array(
+            this.memory.buffer,
+            cartridgePointer,
+            8 * 1024 * 1024,
+          );
+
+          const framePointer = library.getFramePointer();
+          this.frameBuffer = new Uint8ClampedArray(
+            this.memory.buffer,
+            framePointer,
+            160 * 144 * 4,
+          );
+
           this.animationId = -1;
         }
 
@@ -199,26 +213,15 @@
 
         frame() {
           this.library.frame();
+          this.drawFrame();
         }
 
         /**
          * @param {number} row
          */
-        drawScanline(row) {
-          const scanline = new Uint8ClampedArray(
-            this.memory.buffer,
-            this.scanlinePointer,
-            160,
-          );
-          const imageData = new ImageData(scanline.length, 1);
-          for (let i = 0; i < imageData.data.length; i += 4) {
-            const grayscale = Math.floor((scanline[i / 4] / 3) * 255);
-            imageData.data[i] = grayscale;
-            imageData.data[i + 1] = grayscale;
-            imageData.data[i + 2] = grayscale;
-            imageData.data[i + 3] = 255;
-          }
-          this.context.putImageData(imageData, 0, row);
+        drawFrame(row) {
+          const imageData = new ImageData(this.frameBuffer, 160);
+          this.context.putImageData(imageData, 0, 0);
         }
 
         debug() {
@@ -281,14 +284,8 @@
 
         /** @param {File} file */
         async #loadCartridge(file) {
-          const pointer = this.library.getCartridgeBufferPointer();
           const data = await file.arrayBuffer();
-          const array = new Uint8Array(
-            this.memory.buffer,
-            pointer,
-            data.byteLength,
-          );
-          array.set(new Uint8Array(data));
+          this.cartridgeBuffer.set(new Uint8Array(data));
 
           return data.byteLength;
         }

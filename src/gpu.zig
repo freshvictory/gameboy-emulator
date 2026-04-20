@@ -50,9 +50,9 @@ pub const Lcd = struct {
     enabled: bool = true,
 
     ptr: *anyopaque,
-    draw: *const fn (*anyopaque, row: u8, pixels: [160]u2) void,
+    draw: *const fn (*anyopaque, row: u8, pixels: [160]MonoColor) void,
 
-    pub fn drawScanline(self: *Lcd, row: u8, pixels: [160]u2) void {
+    pub fn drawScanline(self: *Lcd, row: u8, pixels: [160]MonoColor) void {
         self.draw(self.ptr, row, pixels);
     }
 };
@@ -242,7 +242,7 @@ fn drawCurrentScanline(gpu: *GPU) void {
     gpu.lcd.drawScanline(gpu.current_scanline, pixels);
 }
 
-fn scanlinePixels(gpu: *GPU) [160]u2 {
+fn scanlinePixels(gpu: *GPU) [160]MonoColor {
     const layer = gpu.background;
 
     const layer_pixels = gpu.layerPixels(layer);
@@ -254,7 +254,7 @@ fn scanlinePixels(gpu: *GPU) [160]u2 {
     else
         column;
 
-    var scanline: [160]u2 = undefined;
+    var scanline: [160]MonoColor = undefined;
     @memcpy(&scanline, layer_pixels[row][start_x .. start_x + screen_width]);
 
     return scanline;
@@ -281,8 +281,8 @@ const Layer = struct {
     tile_map_area: TileMapArea = .low,
 };
 
-fn layerPixels(gpu: *GPU, layer: Layer) [256][256]u2 {
-    var pixels: [256][256]u2 = undefined;
+fn layerPixels(gpu: *GPU, layer: Layer) [256][256]MonoColor {
+    var pixels: [256][256]MonoColor = undefined;
 
     const tile_map = gpu.tileMap(layer.tile_map_area);
 
@@ -303,7 +303,7 @@ fn layerPixels(gpu: *GPU, layer: Layer) [256][256]u2 {
             for (tile.pixels, 0..) |pixel_row, i| {
                 for (pixel_row, 0..) |pixel, j| {
                     const color = gpu.layer_palette.colorOf(pixel);
-                    pixels[row_start + i][column_start + j] = @intFromEnum(color);
+                    pixels[row_start + i][column_start + j] = color;
                 }
             }
         }
@@ -450,13 +450,13 @@ const ObjectAttributes = packed struct(u32) {
     };
 };
 
-fn discardDraw(ptr: *anyopaque, row: u8, pixels: [160]u2) void {
+fn discardDraw(ptr: *anyopaque, row: u8, pixels: [160]MonoColor) void {
     _ = ptr;
     _ = row;
     _ = pixels;
 }
 
-const MonoColor = enum(u2) {
+pub const MonoColor = enum(u2) {
     white = 0,
     light_gray = 1,
     dark_gray = 2,
