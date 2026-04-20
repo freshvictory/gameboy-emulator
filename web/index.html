@@ -6,17 +6,126 @@
     <style>
       html {
         color-scheme: light dark;
+
+        /* --scale: round(
+          down,
+          min(calc(100svh / 526px - 0.25), calc(100svw / 320px - 0.25)),
+          0.25
+        ); */
+        --scale: 2;
+      }
+
+      body {
+        margin: 30px;
+      }
+
+      .gameboy {
+        inline-size: calc(var(--scale) * 320px);
+        block-size: calc(var(--scale) * 526px);
+        box-sizing: border-box;
+
+        background-color: rgb(201 197 194);
+        padding-inline: calc(var(--scale) * 25px);
+        padding-block: calc(var(--scale) * 43px);
+        border-radius: calc(var(--scale) * 11px);
+
+        font-family: sans-serif;
+
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .panel {
+        background-color: rgb(135 132 139);
+
+        display: grid;
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr auto 1fr;
+
+        padding: calc(var(--scale) * 11px);
+        padding-block-end: calc(var(--scale) * 27px);
+        border-radius: calc(var(--scale) * 11px);
+        border-end-end-radius: calc(var(--scale) * 43px);
+
+        border: calc(var(--scale) * 1px) solid rgb(185 182 182);
+        box-shadow: calc(var(--scale) * 1px) calc(var(--scale) * 1px) 2px
+          calc(var(--scale) * -1px) rgb(123 110 102);
+
+        font-size: calc(var(--scale) * 7px);
+        text-transform: uppercase;
+        color: rgb(188 188 188);
+      }
+
+      .banner {
+        grid-column: 1 / span 3;
+
+        margin-block-end: calc(var(--scale) * 11px);
+
+        padding-inline-start: calc(var(--scale) * 75px);
+
+        background: linear-gradient(
+          to bottom,
+          rgb(145 70 111) 25%,
+          transparent 25% 75%,
+          rgb(68 56 117) 75%
+        );
+
+        span {
+          padding-inline: calc(var(--scale) * 7px);
+          display: inline-block;
+          background-color: rgb(135 132 139);
+        }
+      }
+
+      .battery {
+        grid-row: 2;
+
+        margin-top: calc(var(--scale) * 50px);
+
+        letter-spacing: -1px;
+
+        .indicator {
+          appearance: none;
+
+          box-sizing: border-box;
+
+          inline-size: calc(var(--scale) * 11px);
+          aspect-ratio: 1;
+          border-radius: 100%;
+
+          margin-inline: calc(var(--scale) * 5px);
+          margin-block-end: calc(var(--scale) * 7px);
+
+          background-color: hsl(0, 0%, 20%);
+        }
+
+        .indicator:checked {
+          background-color: oklch(71.143% 0.16761 12.698);
+          box-shadow:
+            inset oklch(36.831% 0.16761 12.698) 0 calc(var(--scale) * 0.5px)
+              calc(var(--scale) * 5px),
+            oklch(62.793% 0.26761 12.698 / 0.5) 0 calc(var(--scale) * 1px)
+              calc(var(--scale) * 6px);
+        }
       }
 
       canvas {
-        display: block;
+        grid-row: 2;
 
-        inline-size: 320px;
-        block-size: 288px;
+        display: block;
+        box-sizing: content-box;
+        margin-inline-end: auto;
+
+        box-shadow: inset calc(var(--scale) * 2px) calc(var(--scale) * 2px)
+          calc(var(--scale) * 4px) 3px rgb(106 112 64);
+
+        inline-size: calc(var(--scale) * 160px);
+        block-size: calc(var(--scale) * 144px);
+        padding: calc(var(--scale) * 5px);
+
         image-rendering: pixelated;
 
-        background-color: black;
-        border: 1px solid currentColor;
+        background-color: rgb(141 161 92);
       }
 
       output {
@@ -26,6 +135,17 @@
   </head>
 
   <body>
+    <div class="gameboy" role="presentation">
+      <div class="panel">
+        <div class="banner"><span>Dot matrix with stereo sound</span></div>
+        <div class="battery">
+          <input type="checkbox" id="battery" class="indicator" />
+          <label for="battery">Battery</label>
+        </div>
+
+        <canvas id="canvas" width="160" height="144"></canvas>
+      </div>
+    </div>
     <h1>Gameboy Emulator</h1>
 
     <form id="form">
@@ -44,8 +164,6 @@
       <button value="frame">Frame</button>
       <button value="step">Step</button>
     </form>
-
-    <canvas id="canvas" width="160" height="144"></canvas>
 
     <output id="output" for="form">
       <h2>Opcode</h2>
@@ -157,7 +275,7 @@
          * @param {HTMLCanvasElement | OffscreenCanvas} canvas
          */
         constructor(library, canvas) {
-          this.context = canvas.getContext("2d", { alpha: false });
+          this.context = canvas.getContext("2d");
           this.context.imageSmoothingEnabled = false;
 
           this.library = library;
