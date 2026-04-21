@@ -128,6 +128,16 @@
         background-color: rgb(141 161 92);
       }
 
+      .logo {
+        color: rgb(63 63 139);
+        font-family: "Gill Sans", sans-serif;
+        font-style: italic;
+        text-transform: uppercase;
+
+        font-weight: normal;
+        margin-block: calc(var(--scale) * 5px);
+      }
+
       output {
         font-variant-numeric: tabular-nums;
       }
@@ -145,7 +155,7 @@
 
         <canvas id="canvas" width="160" height="144"></canvas>
       </div>
-      <h1>Gameboy Emulator</h1>
+      <h1 class="logo">Game Boy</h1>
       <form id="buttons">
         <button value="play">Play</button>
         <button value="pause">Pause</button>
