@@ -302,6 +302,7 @@
         }
 
         play() {
+          cancelAnimationFrame(this.animationId);
           const frame = () => {
             this.frame();
             this.animationId = requestAnimationFrame(frame);
