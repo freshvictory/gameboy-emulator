@@ -135,7 +135,7 @@
   </head>
 
   <body>
-    <div class="gameboy" role="presentation">
+    <div id="gameboy" class="gameboy">
       <div class="panel">
         <div class="banner"><span>Dot matrix with stereo sound</span></div>
         <div class="battery">
@@ -145,25 +145,14 @@
 
         <canvas id="canvas" width="160" height="144"></canvas>
       </div>
+      <h1>Gameboy Emulator</h1>
+      <form id="buttons">
+        <button value="play">Play</button>
+        <button value="pause">Pause</button>
+        <button value="frame">Frame</button>
+        <button value="step">Step</button>
+      </form>
     </div>
-    <h1>Gameboy Emulator</h1>
-
-    <form id="form">
-      <label for="cartridge">Select a cartridge:</label>
-      <input
-        id="cartridge"
-        type="file"
-        name="cartridge"
-        required
-        accept=".gb"
-      />
-
-      <button value="boot">Boot</button>
-      <button value="play">Play</button>
-      <button value="pause">Pause</button>
-      <button value="frame">Frame</button>
-      <button value="step">Step</button>
-    </form>
 
     <output id="output" for="form">
       <h2>Opcode</h2>
@@ -411,8 +400,7 @@
     </script>
 
     <script type="module">
-      const form = document.getElementById("form");
-      if (!form) throw new Error("Missing form");
+      const buttons = document.getElementById("buttons");
 
       const output = document.getElementById("output");
       if (!output) throw new Error("Missing output element");
@@ -433,26 +421,12 @@
 
       const gameboy = new Gameboy(result.instance.exports, canvas);
 
-      form.addEventListener("submit", async function (event) {
+      buttons.addEventListener("submit", function (event) {
         event.preventDefault();
 
         const action = event.submitter.value;
 
         switch (action) {
-          case "boot": {
-            const formData = new FormData(event.currentTarget);
-
-            const file = formData.get("cartridge");
-            if (file && !(file instanceof File)) {
-              throw new Error("File invalid or not provided");
-            }
-
-            gameboy.pause();
-            await gameboy.boot(file);
-
-            debug(gameboy.debug());
-            return;
-          }
           case "play": {
             gameboy.play();
             return;
@@ -473,6 +447,47 @@
           }
         }
       });
+
+      const gameboyElement = document.getElementById("gameboy");
+
+      gameboyElement.addEventListener("drop", function (event) {
+        event.preventDefault();
+        const files = [...event.dataTransfer.items]
+          .map((item) => item.getAsFile())
+          .filter((file) => !!file);
+
+        const file = files[0];
+        gameboy.boot(file);
+      });
+
+      gameboyElement.addEventListener("dragover", function (event) {
+        if (containsFile(event)) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }
+      });
+
+      // Stop the default browser behavior of dropping a file opens it
+      window.addEventListener("drop", function (event) {
+        if (containsFile(event)) {
+          event.preventDefault();
+        }
+      });
+
+      window.addEventListener("dragover", function (event) {
+        if (containsFile(event)) {
+          event.preventDefault();
+          if (!gameboyElement.contains(event.target)) {
+            event.dataTransfer.dropEffect = "none";
+          }
+        }
+      });
+
+      function containsFile(event) {
+        return [...event.dataTransfer.items].some(
+          (item) => item.kind === "file",
+        );
+      }
     </script>
   </body>
 </html>
