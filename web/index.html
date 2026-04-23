@@ -23,6 +23,12 @@
         gap: 30px;
       }
 
+      canvas {
+        image-rendering: pixelated;
+
+        background-color: rgb(141 161 92);
+      }
+
       .gameboy {
         inline-size: calc(var(--scale) * 320px);
         block-size: calc(var(--scale) * 526px);
@@ -113,7 +119,7 @@
         }
       }
 
-      canvas {
+      .gameboy canvas {
         grid-row: 2;
 
         display: block;
@@ -126,10 +132,6 @@
         inline-size: calc(var(--scale) * 160px);
         block-size: calc(var(--scale) * 144px);
         padding: calc(var(--scale) * 5px);
-
-        image-rendering: pixelated;
-
-        background-color: rgb(141 161 92);
       }
 
       .logo {
@@ -341,6 +343,8 @@
           <span id="scanline-text">Scanline </span>
         </label>
       </div>
+      <h3>Background</h3>
+      <canvas id="background-canvas" width="256" height="256"></canvas>
     </output>
 
     <div id="gameboy" class="gameboy">
@@ -416,8 +420,9 @@
         /**
          * @param {WebAssembly.Exports} library
          * @param {HTMLCanvasElement | OffscreenCanvas} canvas
+         * @param {HTMLCanvasElement | OffscreenCanvas | null} backgroundCanvas
          */
-        constructor(library, canvas) {
+        constructor(library, canvas, backgroundCanvas = null) {
           this.context = canvas.getContext("2d");
           this.context.imageSmoothingEnabled = false;
 
@@ -439,6 +444,14 @@
             framePointer,
             160 * 144 * 4,
           );
+
+          const backgroundPixelsPointer = library.getBackgroundPixelsPointer();
+          this.backgroundPixels = new Uint8ClampedArray(
+            this.memory.buffer,
+            backgroundPixelsPointer,
+            256 * 256 * 4,
+          );
+          this.backgroundContext = backgroundCanvas?.getContext("2d");
 
           this.animationId = -1;
         }
@@ -471,18 +484,25 @@
 
         step() {
           const opcode = this.library.step();
-          debug(this.debug(), opcode);
+          const debugInfo = this.debug();
+          debug(debugInfo, opcode);
+          this.debugBackground(debugInfo.gpu.background);
         }
 
         frame() {
           this.library.frame();
           this.drawFrame();
+          const debugInfo = this.debug();
+          debug(debugInfo, undefined);
+          this.debugBackground(debugInfo.gpu.background);
         }
 
         scanline() {
           this.library.scanline();
           this.drawFrame();
-          debug(this.debug(), undefined);
+          const debugInfo = this.debug();
+          debug(debugInfo, undefined);
+          this.debugBackground(debugInfo.gpu.background);
         }
 
         /**
@@ -491,6 +511,22 @@
         drawFrame(row) {
           const imageData = new ImageData(this.frameBuffer, 160);
           this.context.putImageData(imageData, 0, 0);
+        }
+
+        debugBackground(background) {
+          if (!this.backgroundContext) return;
+
+          this.backgroundContext.clearRect(0, 0, 255, 255);
+
+          const imageData = new ImageData(this.backgroundPixels, 256);
+          this.backgroundContext.putImageData(imageData, 0, 0);
+          this.backgroundContext.strokeStyle = `rgb(255 0 0)`;
+          this.backgroundContext.strokeRect(
+            background.scrollX,
+            background.scrollY,
+            160,
+            144,
+          );
         }
 
         debug() {
@@ -549,6 +585,10 @@
                       : "finding-objects",
               scanline: this.debugView.getUint8(20),
               dots: this.debugView.getUint32(21),
+              background: {
+                scrollX: this.debugView.getUint8(25),
+                scrollY: this.debugView.getUint8(26),
+              },
             },
           };
         }
@@ -570,6 +610,7 @@
 
       /** @type {HTMLCanvasElement | null} */
       const canvas = document.getElementById("canvas");
+      const backgroundCanvas = document.getElementById("background-canvas");
 
       const file = await fetch("../games/testGame.gb");
       const data = await file.arrayBuffer();
@@ -585,7 +626,11 @@
         },
       );
 
-      const gameboy = new Gameboy(result.instance.exports, canvas);
+      const gameboy = new Gameboy(
+        result.instance.exports,
+        canvas,
+        backgroundCanvas,
+      );
       gameboy.boot(data);
 
       buttons.addEventListener("submit", function (event) {

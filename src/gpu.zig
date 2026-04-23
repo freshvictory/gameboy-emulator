@@ -281,7 +281,7 @@ const Layer = struct {
     tile_map_area: TileMapArea = .low,
 };
 
-fn layerPixels(gpu: *GPU, layer: Layer) [256][256]MonoColor {
+pub fn layerPixels(gpu: *GPU, layer: Layer) [256][256]MonoColor {
     var pixels: [256][256]MonoColor = undefined;
 
     const tile_map = gpu.tileMap(layer.tile_map_area);

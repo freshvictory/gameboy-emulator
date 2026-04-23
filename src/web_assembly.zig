@@ -25,7 +25,12 @@ const CanvasLcd = struct {
         const row_16: u16 = row;
         const row_offset: u16 = 160 * 4 * row_16;
         for (pixels, 0..) |pixel, i| {
-            const color = grayscale(pixel);
+            const color: u8 = switch (pixel) {
+                .black => 255,
+                .dark_gray => 170,
+                .light_gray => 85,
+                .white => 0,
+            };
 
             const offset = row_offset + i * 4;
             frame_buffer[offset] = 0;
@@ -33,15 +38,6 @@ const CanvasLcd = struct {
             frame_buffer[offset + 2] = 0;
             frame_buffer[offset + 3] = color;
         }
-    }
-
-    inline fn grayscale(color: MonoColor) u8 {
-        return switch (color) {
-            .black => 255,
-            .dark_gray => 170,
-            .light_gray => 85,
-            .white => 0,
-        };
     }
 };
 
@@ -78,6 +74,14 @@ export fn scanline() void {
     updateDebugState();
 }
 
+const layer_size = 256 * 256 * 4;
+
+var background_pixels: [layer_size]u8 = [_]u8{0} ** layer_size;
+
+export fn getBackgroundPixelsPointer() *[layer_size]u8 {
+    return &background_pixels;
+}
+
 var debug_state: DebugState = undefined;
 
 export fn getDebugStatePointer() *DebugState {
@@ -109,7 +113,29 @@ fn updateDebugState() void {
         .gpu_mode = @intFromEnum(gameboy.gpu.mode),
         .current_scanline = gameboy.gpu.current_scanline,
         .dots = gameboy.gpu.dots,
+        .background_scroll_x = gameboy.gpu.background.scroll_x,
+        .background_scroll_y = gameboy.gpu.background.scroll_y,
     };
+
+    const background = gameboy.gpu.layerPixels(gameboy.gpu.background);
+
+    for (background, 0..) |row, i| {
+        const row_offset = 256 * 4 * i;
+        for (row, 0..) |pixel, j| {
+            const color: u8 = switch (pixel) {
+                .black => 255,
+                .dark_gray => 170,
+                .light_gray => 85,
+                .white => 0,
+            };
+
+            const offset = row_offset + j * 4;
+            background_pixels[offset] = 0;
+            background_pixels[offset + 1] = 0;
+            background_pixels[offset + 2] = 0;
+            background_pixels[offset + 3] = color;
+        }
+    }
 }
 
 const DebugState = extern struct {
@@ -135,4 +161,6 @@ const DebugState = extern struct {
     gpu_mode: u8, // 19
     current_scanline: u8, // 20
     dots: u32, // 21
+    background_scroll_x: u8, // 25
+    background_scroll_y: u8, // 26
 };
