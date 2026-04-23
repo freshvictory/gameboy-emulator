@@ -17,6 +17,10 @@
 
       body {
         margin: 30px;
+
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
       }
 
       .gameboy {
@@ -139,47 +143,120 @@
       }
 
       output {
+        font-family: monospace;
         font-variant-numeric: tabular-nums;
+
+        h2 {
+          font-size: 1.25rem;
+          margin-block: 10px;
+        }
+
+        h3 {
+          font-size: 1rem;
+          margin: 0;
+        }
+
+        fieldset {
+          border: none;
+          padding-inline: 0;
+          padding-block: 10px;
+
+          legend {
+            padding: 0;
+          }
+        }
+      }
+
+      .registers {
+        display: grid;
+        grid-template-rows: auto auto;
+        grid-auto-flow: column;
+
+        border: 1px solid rgb(135 132 139);
+        border-radius: 5px;
+        overflow: clip;
+
+        dt,
+        dd {
+          padding-block: 8px;
+          padding-inline: 12px;
+          text-align: center;
+        }
+
+        dt {
+          border-block-end: none;
+          font-size: 0.75rem;
+        }
+
+        :where(dt, dd):not(:last-of-type) {
+          border-inline-end: 1px solid rgb(135 132 139);
+        }
+
+        dd {
+          margin: 0;
+          min-inline-size: 3ch;
+        }
+      }
+
+      .gpu-mode,
+      .flags {
+        display: flex;
+        gap: 10px;
+        justify-content: space-evenly;
+
+        label {
+          display: flex;
+
+          padding: 5px;
+        }
+
+        label:has(:checked) {
+          background-color: var(--c-toggled);
+        }
+
+        input {
+          appearance: none;
+          margin: 0;
+        }
+      }
+
+      .flags {
+        --c-toggled: powderblue;
+      }
+
+      .gpu-mode {
+        --c-toggled: coral;
+      }
+
+      .gpu-meters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .dots,
+      .scanline {
+        display: flex;
+        flex-direction: column;
+        margin-block: 10px;
+        gap: 5px;
+
+        progress {
+          inline-size: 100%;
+        }
       }
     </style>
   </head>
 
   <body>
-    <div id="gameboy" class="gameboy">
-      <div class="panel">
-        <div class="banner"><span>Dot matrix with stereo sound</span></div>
-        <div class="battery">
-          <input type="checkbox" id="battery" class="indicator" />
-          <label for="battery">Battery</label>
-        </div>
-
-        <canvas id="canvas" width="160" height="144"></canvas>
-      </div>
-      <h1 class="logo">Game Boy</h1>
-      <form id="buttons">
-        <button value="play">Play</button>
-        <button value="pause">Pause</button>
-        <button value="frame">Frame</button>
-        <button value="step">Step</button>
-      </form>
-    </div>
-
     <output id="output" for="form">
-      <h2>Opcode</h2>
-      <p id="opcode"></p>
-
       <h2>CPU</h2>
 
-      <dl>
-        <dt>Halted</dt>
-        <dd id="halted">false</dd>
-
-        <dt>Interrupt master enable</dt>
-        <dd id="interrupt-master-enable">false</dd>
-      </dl>
+      <h3>Opcode</h3>
+      <p id="opcode">0x00</p>
 
       <h3>Registers</h3>
-      <dl>
+      <dl class="registers">
         <dt>A</dt>
         <dd id="register:a">0</dd>
 
@@ -201,38 +278,101 @@
         <dt>L</dt>
         <dd id="register:l">0</dd>
 
-        <dt>Stack pointer</dt>
+        <dt><abbr title="Stack pointer">SP</abbr></dt>
         <dd id="register:stack-pointer">0</dd>
 
-        <dt>Program counter</dt>
+        <dt><abbr title="Program counter">PC</abbr></dt>
         <dd id="program-counter">0</dd>
       </dl>
 
-      <h3>Flags</h3>
-      <dl>
-        <dt>Carried</dt>
-        <dd id="carried">false</dd>
+      <fieldset class="flags">
+        <legend><h3>Flags</h3></legend>
 
-        <dt>Half carried</dt>
-        <dd id="half-carried">false</dd>
-
-        <dt>Subtracted</dt>
-        <dd id="subtracted">false</dd>
-
-        <dt>Was zero</dt>
-        <dd id="was-zero">false</dd>
-      </dl>
+        <label>
+          <input type="checkbox" name="flags" value="carried" />
+          Carried
+        </label>
+        <label>
+          <input type="checkbox" name="flags" value="half-carried" />
+          Half-carried
+        </label>
+        <label>
+          <input type="checkbox" name="flags" value="subtracted" />
+          Subtracted
+        </label>
+        <label>
+          <input type="checkbox" name="flags" value="was-zero" />
+          Was zero
+        </label>
+      </fieldset>
 
       <h2>GPU</h2>
-      <p id="mode"></p>
+      <fieldset class="gpu-mode">
+        <legend><h3>Mode</h3></legend>
+        <label>
+          <input type="radio" name="gpu-mode" value="finding-objects" />
+          Finding objects
+        </label>
+        <label>
+          <input type="radio" name="gpu-mode" value="drawing" readonly />
+          Drawing
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="gpu-mode"
+            value="horizontal-blank"
+            readonly
+          />
+          Horizontal blank
+        </label>
+        <label>
+          <input type="radio" name="gpu-mode" value="vertical-blank" readonly />
+          Vertical blank
+        </label>
+      </fieldset>
+      <div class="gpu-meters">
+        <label class="dots">
+          <progress id="dots" max="456" value="0"></progress>
+          <span id="dots-text">Dots </span>
+        </label>
+        <label class="scanline">
+          <progress id="scanline" max="154" value="0"></progress>
+          <span id="scanline-text">Scanline </span>
+        </label>
+      </div>
     </output>
+
+    <div id="gameboy" class="gameboy">
+      <div class="panel">
+        <div class="banner"><span>Dot matrix with stereo sound</span></div>
+        <div class="battery">
+          <input type="checkbox" id="battery" class="indicator" />
+          <label for="battery">Battery</label>
+        </div>
+
+        <canvas id="canvas" width="160" height="144"></canvas>
+      </div>
+      <h1 class="logo">Game Boy</h1>
+      <form id="buttons">
+        <button value="play">Play</button>
+        <button value="pause">Pause</button>
+        <button value="frame">Frame</button>
+        <button value="scanline">Scanline</button>
+        <button value="step">Step</button>
+      </form>
+    </div>
 
     <script>
       function debug(info, opcode) {
         debugCPU(info.cpu);
         debugGPU(info.gpu);
-        document.getElementById("opcode").textContent =
-          opcode?.toString(16) ?? "";
+        let opcodeHex = opcode?.toString("16")?.toUpperCase() ?? "0";
+        if (opcodeHex.length < 2) {
+          opcodeHex = "0" + opcodeHex;
+        }
+
+        document.getElementById("opcode").textContent = "0x" + opcodeHex;
       }
 
       function debugCPU(cpu) {
@@ -240,16 +380,12 @@
         document.getElementById("program-counter").textContent =
           cpu.programCounter;
 
-        document.getElementById("halted").textContent = cpu.halted;
-        document.getElementById("interrupt-master-enable").textContent =
-          cpu.interruptMasterEnable;
-
-        document.getElementById("carried").textContent = cpu.flags.carried;
-        document.getElementById("half-carried").textContent =
+        document.querySelector("[value=carried]").checked = cpu.flags.carried;
+        document.querySelector("[value=half-carried]").checked =
           cpu.flags.halfCarried;
-        document.getElementById("subtracted").textContent =
+        document.querySelector("[value=subtracted]").checked =
           cpu.flags.subtracted;
-        document.getElementById("was-zero").textContent = cpu.flags.wasZero;
+        document.querySelector("[value=was-zero]").checked = cpu.flags.wasZero;
       }
 
       function debugRegisters(registers) {
@@ -265,7 +401,15 @@
       }
 
       function debugGPU(gpu) {
-        document.getElementById("mode").textContent = gpu.mode;
+        document.querySelector(
+          `input[name="gpu-mode"][value="${gpu.mode}"]`,
+        ).checked = true;
+        document.getElementById("dots").value = gpu.dots;
+        document.getElementById("dots-text").textContent =
+          `Dots ${gpu.dots}/456`;
+        document.getElementById("scanline").value = gpu.scanline;
+        document.getElementById("scanline-text").textContent =
+          `Scanline ${gpu.scanline}/154`;
       }
 
       class Gameboy {
@@ -299,9 +443,10 @@
           this.animationId = -1;
         }
 
-        /** @param {File?} file */
+        /** @param {File | ArrayBuffer} file */
         async boot(file) {
-          const length = await this.#loadCartridge(file);
+          const data = file instanceof File ? await file.arrayBuffer() : file;
+          const length = await this.#loadCartridge(data);
           this.context.clearRect(
             0,
             0,
@@ -334,6 +479,12 @@
           this.drawFrame();
         }
 
+        scanline() {
+          this.library.scanline();
+          this.drawFrame();
+          debug(this.debug(), undefined);
+        }
+
         /**
          * @param {number} row
          */
@@ -348,7 +499,7 @@
           const flags = this.debugView.getUint8(11);
           const enabledInterrupts = this.debugView.getUint8(17);
           const activeInterrupts = this.debugView.getUint8(18);
-          const gpuMode = this.debugView.getUint8(21);
+          const gpuMode = this.debugView.getUint8(19);
           return {
             cpu: {
               registers: {
@@ -368,8 +519,8 @@
                 subtracted: (flags & 0x40) !== 0,
                 wasZero: (flags & 0x80) !== 0,
               },
-              halted: this.debugView.getUint8(19) !== 0,
-              interruptMasterEnable: this.debugView.getUint8(20) !== 0,
+              halted: false, // this.debugView.getUint8(19) !== 0,
+              interruptMasterEnable: false, // this.debugView.getUint8(20) !== 0,
             },
             interrupts: {
               active: {
@@ -390,19 +541,20 @@
             gpu: {
               mode:
                 gpuMode === 0
-                  ? "horizontal blank"
+                  ? "horizontal-blank"
                   : gpuMode === 1
-                    ? "vertical blank"
+                    ? "vertical-blank"
                     : gpuMode === 2
                       ? "drawing"
-                      : "finding objects",
+                      : "finding-objects",
+              scanline: this.debugView.getUint8(20),
+              dots: this.debugView.getUint32(21),
             },
           };
         }
 
-        /** @param {File} file */
-        async #loadCartridge(file) {
-          const data = await file.arrayBuffer();
+        /** @param {ArrayBuffer} data */
+        async #loadCartridge(data) {
           this.cartridgeBuffer.set(new Uint8Array(data));
 
           return data.byteLength;
@@ -419,6 +571,9 @@
       /** @type {HTMLCanvasElement | null} */
       const canvas = document.getElementById("canvas");
 
+      const file = await fetch("../games/testGame.gb");
+      const data = await file.arrayBuffer();
+
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
         {
@@ -431,6 +586,7 @@
       );
 
       const gameboy = new Gameboy(result.instance.exports, canvas);
+      gameboy.boot(data);
 
       buttons.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -450,6 +606,11 @@
             gameboy.pause();
             gameboy.frame();
             return;
+          }
+          case "scanline": {
+            gameboy.pause();
+            gameboy.scanline();
+            break;
           }
           case "step": {
             gameboy.pause();

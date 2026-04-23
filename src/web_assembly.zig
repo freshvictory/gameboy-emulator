@@ -73,6 +73,11 @@ export fn frame() void {
     gameboy.frame();
 }
 
+export fn scanline() void {
+    gameboy.scanline();
+    updateDebugState();
+}
+
 var debug_state: DebugState = undefined;
 
 export fn getDebugStatePointer() *DebugState {
@@ -92,8 +97,8 @@ fn updateDebugState() void {
         .stack_pointer = gameboy.cpu.registers.stack_pointer,
         .program_counter = gameboy.cpu.program_counter,
         .flags = gameboy.cpu.flags.int(),
-        .interrupt_master_enable = gameboy.cpu.interrupt_master_enable,
-        .halted = gameboy.cpu.halted,
+        // .interrupt_master_enable = gameboy.cpu.interrupt_master_enable,
+        // .halted = gameboy.cpu.halted,
         .timer_m = gameboy.timer.m,
         .timer_divider = gameboy.timer.divider,
         .timer_counter = gameboy.timer.counter,
@@ -102,6 +107,8 @@ fn updateDebugState() void {
         .enabled_interrupts = gameboy.interrupts.enabled.int(),
         .active_interrupts = gameboy.interrupts.active.int(),
         .gpu_mode = @intFromEnum(gameboy.gpu.mode),
+        .current_scanline = gameboy.gpu.current_scanline,
+        .dots = gameboy.gpu.dots,
     };
 }
 
@@ -123,7 +130,9 @@ const DebugState = extern struct {
     timer_control: u8, // 16
     enabled_interrupts: u8, // 17
     active_interrupts: u8, // 18
-    halted: bool, // 19
-    interrupt_master_enable: bool, // 20
-    gpu_mode: u8, // 21
+    // halted: bool, // 19
+    // interrupt_master_enable: bool, // 20
+    gpu_mode: u8, // 19
+    current_scanline: u8, // 20
+    dots: u32, // 21
 };

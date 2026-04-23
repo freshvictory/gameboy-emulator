@@ -124,7 +124,7 @@ fn handleLcdInterrupt(gpu: GPU) void {
 }
 
 fn atEndOfFrame(gpu: GPU) bool {
-    return gpu.current_scanline == screen_height + vertical_blank_lines;
+    return gpu.current_scanline == (screen_height + vertical_blank_lines);
 }
 
 fn resetFrame(gpu: *GPU) void {

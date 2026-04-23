@@ -9,7 +9,8 @@ const CPU = @import("cpu.zig");
 
 const Gameboy = @This();
 
-const cycles_per_frame = 17_556;
+const cylces_per_scanline = 114;
+const cycles_per_frame = 154 * cylces_per_scanline;
 
 interrupts: Interrupts = .{},
 timer: Timer,
@@ -37,18 +38,11 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge, lcd: Lcd) void {
 }
 
 pub fn frame(gameboy: *Gameboy) void {
-    var i: usize = 0;
-    while (i < cycles_per_frame) {
-        const pre_cycles: usize = gameboy.timer.m;
-        _ = gameboy.cpu.step();
-        const post_cycles: usize = gameboy.timer.m;
-        const total_cycles = if (pre_cycles < post_cycles)
-            post_cycles - pre_cycles
-        else
-            post_cycles + (256 - pre_cycles);
+    gameboy.runCycles(cycles_per_frame);
+}
 
-        i += total_cycles;
-    }
+pub fn scanline(gameboy: *Gameboy) void {
+    gameboy.runCycles(cylces_per_scanline);
 }
 
 pub fn step(gameboy: *Gameboy) ?u8 {
@@ -61,4 +55,19 @@ fn tick(ptr: *anyopaque) void {
     gameboy.timer.tick();
     // TODO: speed
     gameboy.gpu.tick(4);
+}
+
+fn runCycles(gameboy: *Gameboy, cycles: usize) void {
+    var i: usize = 0;
+    while (i < cycles) {
+        const pre_cycles: usize = gameboy.timer.m;
+        _ = gameboy.cpu.step();
+        const post_cycles: usize = gameboy.timer.m;
+        const total_cycles = if (pre_cycles < post_cycles)
+            post_cycles - pre_cycles
+        else
+            post_cycles + (256 - pre_cycles);
+
+        i += total_cycles;
+    }
 }
