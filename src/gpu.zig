@@ -289,7 +289,7 @@ pub fn layerPixels(gpu: *GPU, layer: Layer) [256][256]MonoColor {
     var tiles: [32][32]Tile = undefined;
     for (0..32) |row| {
         for (0..32) |column| {
-            const index = row + column;
+            const index = row * 32 + column;
             const tile_id = tile_map[index];
             const tile = gpu.readLayerTile(tile_id);
             tiles[row][column] = tile;
@@ -341,15 +341,21 @@ test layerPixels {
     const pixels = gpu.layerPixels(gpu.background);
 
     try std.testing.expectEqualSlices(
-        u2,
-        &[8]u2{ 0b00, 0b10, 0b11, 0b11, 0b11, 0b11, 0b10, 0b00 },
+        MonoColor,
+        &[8]MonoColor{ .white, .dark_gray, .black, .black, .black, .black, .dark_gray, .white },
         pixels[0][0..8],
     );
 
     try std.testing.expectEqualSlices(
-        u2,
-        &[8]u2{ 0b00, 0b11, 0b00, 0b00, 0b00, 0b00, 0b11, 0b00 },
+        MonoColor,
+        &[8]MonoColor{ .white, .black, .white, .white, .white, .white, .black, .white },
         pixels[1][0..8],
+    );
+
+    try std.testing.expectEqualSlices(
+        MonoColor,
+        &[8]MonoColor{ .white, .dark_gray, .black, .black, .black, .dark_gray, .white, .white },
+        pixels[255][0..8],
     );
 }
 
@@ -461,6 +467,12 @@ pub const MonoColor = enum(u2) {
     light_gray = 1,
     dark_gray = 2,
     black = 3,
+
+    pub fn opacity(self: MonoColor) u8 {
+        const value: u8 = @intFromEnum(self);
+
+        return value * 85;
+    }
 };
 
 const MonoPalette = packed struct(u8) {
