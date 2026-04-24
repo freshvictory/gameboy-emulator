@@ -55,7 +55,6 @@ export fn start(cartridge_length: u32) void {
     const cartridge = Cartridge.init(contents);
     var canvas_lcd = CanvasLcd{};
     gameboy.boot(cartridge, canvas_lcd.lcd());
-    updateDebugState();
 }
 
 export fn step() u8 {
@@ -71,7 +70,6 @@ export fn frame() void {
 
 export fn scanline() void {
     gameboy.scanline();
-    updateDebugState();
 }
 
 const layer_size = 256 * 256 * 4;
@@ -82,13 +80,13 @@ export fn getBackgroundPixelsPointer() *[layer_size]u8 {
     return &background_pixels;
 }
 
-var debug_state: DebugState = undefined;
+var debug_state: DebugState = .{};
 
 export fn getDebugStatePointer() *DebugState {
     return &debug_state;
 }
 
-fn updateDebugState() void {
+export fn updateDebugState() void {
     const control: u3 = @bitCast(gameboy.timer.control);
     debug_state = .{
         .a = gameboy.cpu.registers.a,
@@ -110,57 +108,51 @@ fn updateDebugState() void {
         .timer_control = control,
         .enabled_interrupts = gameboy.interrupts.enabled.int(),
         .active_interrupts = gameboy.interrupts.active.int(),
-        .gpu_mode = @intFromEnum(gameboy.gpu.mode),
-        .current_scanline = gameboy.gpu.current_scanline,
-        .dots = gameboy.gpu.dots,
-        .background_scroll_x = gameboy.gpu.background.scroll_x,
-        .background_scroll_y = gameboy.gpu.background.scroll_y,
     };
+    updateGpuDebug();
+}
 
+export fn updateGpuDebug() void {
     const background = gameboy.gpu.layerPixels(gameboy.gpu.background);
 
     for (background, 0..) |row, i| {
         const row_offset = 256 * 4 * i;
         for (row, 0..) |pixel, j| {
-            const color: u8 = switch (pixel) {
-                .black => 255,
-                .dark_gray => 170,
-                .light_gray => 85,
-                .white => 0,
-            };
-
-            const offset = row_offset + j * 4;
-            background_pixels[offset] = 0;
-            background_pixels[offset + 1] = 0;
-            background_pixels[offset + 2] = 0;
-            background_pixels[offset + 3] = color;
+            const offset = row_offset + j * 4 + 3;
+            background_pixels[offset] = pixel.opacity();
         }
     }
+
+    debug_state.gpu_mode = @intFromEnum(gameboy.gpu.mode);
+    debug_state.current_scanline = gameboy.gpu.current_scanline;
+    debug_state.dots = gameboy.gpu.dots;
+    debug_state.background_scroll_x = gameboy.gpu.background.scroll_x;
+    debug_state.background_scroll_y = gameboy.gpu.background.scroll_y;
 }
 
 const DebugState = extern struct {
-    stack_pointer: u16, // 0
-    program_counter: u16, // 2
-    a: u8, // 4
-    b: u8, // 5
-    c: u8, // 6
-    d: u8, // 7
-    e: u8, // 8
-    h: u8, // 9
-    l: u8, // 10
-    flags: u8, // 11
-    timer_m: u8, // 12
-    timer_divider: u8, // 13
-    timer_counter: u8, // 14
-    timer_reset_value: u8, // 15
-    timer_control: u8, // 16
-    enabled_interrupts: u8, // 17
-    active_interrupts: u8, // 18
+    stack_pointer: u16 = 0, // 0
+    program_counter: u16 = 0, // 2
+    a: u8 = 0, // 4
+    b: u8 = 0, // 5
+    c: u8 = 0, // 6
+    d: u8 = 0, // 7
+    e: u8 = 0, // 8
+    h: u8 = 0, // 9
+    l: u8 = 0, // 10
+    flags: u8 = 0, // 11
+    timer_m: u8 = 0, // 12
+    timer_divider: u8 = 0, // 13
+    timer_counter: u8 = 0, // 14
+    timer_reset_value: u8 = 0, // 15
+    timer_control: u8 = 0, // 16
+    enabled_interrupts: u8 = 0, // 17
+    active_interrupts: u8 = 0, // 18
     // halted: bool, // 19
     // interrupt_master_enable: bool, // 20
-    gpu_mode: u8, // 19
-    current_scanline: u8, // 20
-    dots: u32, // 21
-    background_scroll_x: u8, // 25
-    background_scroll_y: u8, // 26
+    gpu_mode: u8 = 0, // 19
+    current_scanline: u8 = 0, // 20
+    dots: u32 = 0, // 21
+    background_scroll_x: u8 = 0, // 25
+    background_scroll_y: u8 = 0, // 26
 };

@@ -12,7 +12,7 @@
           min(calc(100svh / 526px - 0.25), calc(100svw / 320px - 0.25)),
           0.25
         ); */
-        --scale: 2;
+        --scale: 1;
       }
 
       body {
@@ -367,253 +367,8 @@
       </form>
     </div>
 
-    <script>
-      function debug(info, opcode) {
-        debugCPU(info.cpu);
-        debugGPU(info.gpu);
-        let opcodeHex = opcode?.toString("16")?.toUpperCase() ?? "0";
-        if (opcodeHex.length < 2) {
-          opcodeHex = "0" + opcodeHex;
-        }
-
-        document.getElementById("opcode").textContent = "0x" + opcodeHex;
-      }
-
-      function debugCPU(cpu) {
-        debugRegisters(cpu.registers);
-        document.getElementById("program-counter").textContent =
-          cpu.programCounter;
-
-        document.querySelector("[value=carried]").checked = cpu.flags.carried;
-        document.querySelector("[value=half-carried]").checked =
-          cpu.flags.halfCarried;
-        document.querySelector("[value=subtracted]").checked =
-          cpu.flags.subtracted;
-        document.querySelector("[value=was-zero]").checked = cpu.flags.wasZero;
-      }
-
-      function debugRegisters(registers) {
-        document.getElementById("register:a").textContent = registers.a;
-        document.getElementById("register:b").textContent = registers.b;
-        document.getElementById("register:c").textContent = registers.c;
-        document.getElementById("register:d").textContent = registers.d;
-        document.getElementById("register:e").textContent = registers.e;
-        document.getElementById("register:h").textContent = registers.h;
-        document.getElementById("register:l").textContent = registers.l;
-        document.getElementById("register:stack-pointer").textContent =
-          registers.stackPointer;
-      }
-
-      function debugGPU(gpu) {
-        document.querySelector(
-          `input[name="gpu-mode"][value="${gpu.mode}"]`,
-        ).checked = true;
-        document.getElementById("dots").value = gpu.dots;
-        document.getElementById("dots-text").textContent =
-          `Dots ${gpu.dots}/456`;
-        document.getElementById("scanline").value = gpu.scanline;
-        document.getElementById("scanline-text").textContent =
-          `Scanline ${gpu.scanline}/154`;
-      }
-
-      class Gameboy {
-        /**
-         * @param {WebAssembly.Exports} library
-         * @param {HTMLCanvasElement | OffscreenCanvas} canvas
-         * @param {HTMLCanvasElement | OffscreenCanvas | null} backgroundCanvas
-         */
-        constructor(library, canvas, backgroundCanvas = null) {
-          this.context = canvas.getContext("2d");
-          this.context.imageSmoothingEnabled = false;
-
-          this.library = library;
-          this.memory = library.memory;
-          const debugPointer = library.getDebugStatePointer();
-          this.debugView = new DataView(this.memory.buffer, debugPointer);
-
-          const cartridgePointer = library.getCartridgeBufferPointer();
-          this.cartridgeBuffer = new Uint8Array(
-            this.memory.buffer,
-            cartridgePointer,
-            8 * 1024 * 1024,
-          );
-
-          const framePointer = library.getFramePointer();
-          this.frameBuffer = new Uint8ClampedArray(
-            this.memory.buffer,
-            framePointer,
-            160 * 144 * 4,
-          );
-
-          const backgroundPixelsPointer = library.getBackgroundPixelsPointer();
-          this.backgroundPixels = new Uint8ClampedArray(
-            this.memory.buffer,
-            backgroundPixelsPointer,
-            256 * 256 * 4,
-          );
-          this.backgroundContext = backgroundCanvas?.getContext("2d");
-
-          this.animationId = -1;
-        }
-
-        /** @param {File | ArrayBuffer} file */
-        async boot(file) {
-          const data = file instanceof File ? await file.arrayBuffer() : file;
-          const length = await this.#loadCartridge(data);
-          this.context.clearRect(
-            0,
-            0,
-            this.context.canvas.width,
-            this.context.canvas.height,
-          );
-          this.library.start(length);
-        }
-
-        play() {
-          cancelAnimationFrame(this.animationId);
-          const frame = () => {
-            this.frame();
-            this.animationId = requestAnimationFrame(frame);
-          };
-          this.animationId = requestAnimationFrame(frame);
-        }
-
-        pause() {
-          cancelAnimationFrame(this.animationId);
-        }
-
-        step() {
-          const opcode = this.library.step();
-          const debugInfo = this.debug();
-          debug(debugInfo, opcode);
-          this.debugBackground(debugInfo.gpu.background);
-        }
-
-        frame() {
-          this.library.frame();
-          this.drawFrame();
-          const debugInfo = this.debug();
-          debug(debugInfo, undefined);
-          this.debugBackground(debugInfo.gpu.background);
-        }
-
-        scanline() {
-          this.library.scanline();
-          this.drawFrame();
-          const debugInfo = this.debug();
-          debug(debugInfo, undefined);
-          this.debugBackground(debugInfo.gpu.background);
-        }
-
-        /**
-         * @param {number} row
-         */
-        drawFrame(row) {
-          const imageData = new ImageData(this.frameBuffer, 160);
-          this.context.putImageData(imageData, 0, 0);
-        }
-
-        debugBackground(background) {
-          if (!this.backgroundContext) return;
-
-          this.backgroundContext.clearRect(0, 0, 255, 255);
-
-          const imageData = new ImageData(this.backgroundPixels, 256);
-          this.backgroundContext.putImageData(imageData, 0, 0);
-          this.backgroundContext.strokeStyle = `rgb(255 0 0)`;
-          this.backgroundContext.strokeRect(
-            background.scrollX,
-            background.scrollY,
-            160,
-            144,
-          );
-        }
-
-        debug() {
-          const stackPointer = this.debugView.getUint16(0, true);
-          const programCounter = this.debugView.getUint16(2, true);
-          const flags = this.debugView.getUint8(11);
-          const enabledInterrupts = this.debugView.getUint8(17);
-          const activeInterrupts = this.debugView.getUint8(18);
-          const gpuMode = this.debugView.getUint8(19);
-          return {
-            cpu: {
-              registers: {
-                a: this.debugView.getUint8(4),
-                b: this.debugView.getUint8(5),
-                c: this.debugView.getUint8(6),
-                d: this.debugView.getUint8(7),
-                e: this.debugView.getUint8(8),
-                h: this.debugView.getUint8(9),
-                l: this.debugView.getUint8(10),
-                stackPointer,
-              },
-              programCounter,
-              flags: {
-                carried: (flags & 0x10) !== 0,
-                halfCarried: (flags & 0x20) !== 0,
-                subtracted: (flags & 0x40) !== 0,
-                wasZero: (flags & 0x80) !== 0,
-              },
-              halted: false, // this.debugView.getUint8(19) !== 0,
-              interruptMasterEnable: false, // this.debugView.getUint8(20) !== 0,
-            },
-            interrupts: {
-              active: {
-                vBlank: (activeInterrupts & 0b1) !== 0,
-                lcd: (activeInterrupts & 0b10) !== 0,
-                timer: (activeInterrupts & 0b100) !== 0,
-                serial: (activeInterrupts & 0b1000) !== 0,
-                joypad: (activeInterrupts & 0b10000) !== 0,
-              },
-              enabled: {
-                vBlank: (enabledInterrupts & 0b1) !== 0,
-                lcd: (enabledInterrupts & 0b10) !== 0,
-                timer: (enabledInterrupts & 0b100) !== 0,
-                serial: (enabledInterrupts & 0b1000) !== 0,
-                joypad: (enabledInterrupts & 0b10000) !== 0,
-              },
-            },
-            gpu: {
-              mode:
-                gpuMode === 0
-                  ? "horizontal-blank"
-                  : gpuMode === 1
-                    ? "vertical-blank"
-                    : gpuMode === 2
-                      ? "drawing"
-                      : "finding-objects",
-              scanline: this.debugView.getUint8(20),
-              dots: this.debugView.getUint32(21),
-              background: {
-                scrollX: this.debugView.getUint8(25),
-                scrollY: this.debugView.getUint8(26),
-              },
-            },
-          };
-        }
-
-        /** @param {ArrayBuffer} data */
-        async #loadCartridge(data) {
-          this.cartridgeBuffer.set(new Uint8Array(data));
-
-          return data.byteLength;
-        }
-      }
-    </script>
-
     <script type="module">
-      const buttons = document.getElementById("buttons");
-
-      const output = document.getElementById("output");
-      if (!output) throw new Error("Missing output element");
-
-      /** @type {HTMLCanvasElement | null} */
-      const canvas = document.getElementById("canvas");
-      const backgroundCanvas = document.getElementById("background-canvas");
-
-      const file = await fetch("../games/testGame.gb");
-      const data = await file.arrayBuffer();
+      import { Gameboy } from "./gameboy.js";
 
       const result = await WebAssembly.instantiateStreaming(
         fetch("public/gameboy.wasm"),
@@ -626,9 +381,22 @@
         },
       );
 
+      const buttons = document.getElementById("buttons");
+
+      const output = document.getElementById("output");
+      if (!output) throw new Error("Missing output element");
+
+      /** @type {HTMLCanvasElement | null} */
+      const canvas = document.getElementById("canvas");
+      const backgroundCanvas = document.getElementById("background-canvas");
+
+      const file = await fetch("../games/testGame.gb");
+      const data = await file.arrayBuffer();
       const gameboy = new Gameboy(
         result.instance.exports,
         canvas,
+        debugCpu,
+        debugGpu,
         backgroundCanvas,
       );
       gameboy.boot(data);
@@ -704,6 +472,48 @@
         return [...event.dataTransfer.items].some(
           (item) => item.kind === "file",
         );
+      }
+
+      function debug(info, opcode) {
+        debugCPU(info.cpu);
+        debugGPU(info.gpu);
+      }
+
+      function debugCpu(cpu) {
+        debugRegisters(cpu.registers);
+        document.getElementById("program-counter").textContent =
+          cpu.programCounter;
+
+        document.querySelector("[value=carried]").checked = cpu.flags.carried;
+        document.querySelector("[value=half-carried]").checked =
+          cpu.flags.halfCarried;
+        document.querySelector("[value=subtracted]").checked =
+          cpu.flags.subtracted;
+        document.querySelector("[value=was-zero]").checked = cpu.flags.wasZero;
+      }
+
+      function debugRegisters(registers) {
+        document.getElementById("register:a").textContent = registers.a;
+        document.getElementById("register:b").textContent = registers.b;
+        document.getElementById("register:c").textContent = registers.c;
+        document.getElementById("register:d").textContent = registers.d;
+        document.getElementById("register:e").textContent = registers.e;
+        document.getElementById("register:h").textContent = registers.h;
+        document.getElementById("register:l").textContent = registers.l;
+        document.getElementById("register:stack-pointer").textContent =
+          registers.stackPointer;
+      }
+
+      function debugGpu(gpu) {
+        document.querySelector(
+          `input[name="gpu-mode"][value="${gpu.mode}"]`,
+        ).checked = true;
+        document.getElementById("dots").value = gpu.dots;
+        document.getElementById("dots-text").textContent =
+          `Dots ${gpu.dots}/456`;
+        document.getElementById("scanline").value = gpu.scanline;
+        document.getElementById("scanline-text").textContent =
+          `Scanline ${gpu.scanline}/154`;
       }
     </script>
   </body>
