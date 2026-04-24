@@ -50,18 +50,20 @@ export class Gameboy {
     );
 
     const framePointer = library.getFramePointer();
-    this.frameBuffer = new Uint8ClampedArray(
+    const frameBuffer = new Uint8ClampedArray(
       this.memory.buffer,
       framePointer,
       160 * 144 * 4,
     );
+    this.frameImageData = new ImageData(frameBuffer, 160);
 
     const backgroundPixelsPointer = library.getBackgroundPixelsPointer();
-    this.backgroundPixels = new Uint8ClampedArray(
+    const backgroundPixels = new Uint8ClampedArray(
       this.memory.buffer,
       backgroundPixelsPointer,
       256 * 256 * 4,
     );
+    this.backgroundImageData = new ImageData(backgroundPixels, 256);
     this.backgroundContext = backgroundCanvas?.getContext("2d");
 
     this.animationId = -1;
@@ -111,8 +113,7 @@ export class Gameboy {
   }
 
   drawFrame() {
-    const imageData = new ImageData(this.frameBuffer, 160);
-    this.context.putImageData(imageData, 0, 0);
+    this.context.putImageData(this.frameImageData, 0, 0);
   }
 
   /** @param {ArrayBuffer} data */
@@ -144,8 +145,7 @@ export class Gameboy {
 
     this.backgroundContext.clearRect(0, 0, 255, 255);
 
-    const imageData = new ImageData(this.backgroundPixels, 256);
-    this.backgroundContext.putImageData(imageData, 0, 0);
+    this.backgroundContext.putImageData(this.backgroundImageData, 0, 0);
     this.backgroundContext.strokeStyle = `rgb(255 0 0)`;
     this.backgroundContext.strokeRect(
       background.scrollX,
