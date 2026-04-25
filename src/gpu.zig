@@ -261,6 +261,45 @@ fn scanlinePixels(gpu: *GPU) [160]MonoColor {
     return scanline;
 }
 
+test scanlinePixels {
+    const tile = Tile{
+        .pixels = [8][8]u2{
+            .{ 0b00, 0b10, 0b11, 0b11, 0b11, 0b11, 0b10, 0b00 },
+            .{ 0b00, 0b11, 0b00, 0b00, 0b00, 0b00, 0b11, 0b00 },
+            .{ 0b00, 0b11, 0b00, 0b00, 0b00, 0b00, 0b11, 0b00 },
+            .{ 0b00, 0b11, 0b00, 0b00, 0b00, 0b00, 0b11, 0b00 },
+            .{ 0b00, 0b11, 0b01, 0b11, 0b11, 0b11, 0b11, 0b00 },
+            .{ 0b00, 0b01, 0b01, 0b01, 0b11, 0b01, 0b11, 0b00 },
+            .{ 0b00, 0b11, 0b01, 0b11, 0b01, 0b11, 0b10, 0b00 },
+            .{ 0b00, 0b10, 0b11, 0b11, 0b11, 0b10, 0b00, 0b00 },
+        },
+    };
+
+    var interrupts = Interrupts{};
+
+    var gpu = GPU{
+        .interrupts = &interrupts,
+        .tiles = [_]Tile{tile} ** 384,
+        .tile_map_low = [_]u8{0} ** 1024,
+        .background = .{
+            .enabled = true,
+            .scroll_x = 1,
+            .scroll_y = 1,
+            .tile_map_area = .low,
+        },
+
+        .current_scanline = 143,
+    };
+
+    const pixels = gpu.scanlinePixels();
+
+    try std.testing.expectEqualSlices(
+        MonoColor,
+        &[8]MonoColor{ .dark_gray, .black, .black, .black, .black, .dark_gray, .white, .white },
+        pixels[0..8],
+    );
+}
+
 const TileMapArea = enum(u1) {
     low = 0,
     high = 1,
