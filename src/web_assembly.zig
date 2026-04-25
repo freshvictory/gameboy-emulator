@@ -133,26 +133,24 @@ export fn updateGpuDebug() void {
 const DebugState = extern struct {
     stack_pointer: u16 = 0, // 0
     program_counter: u16 = 0, // 2
-    a: u8 = 0, // 4
-    b: u8 = 0, // 5
-    c: u8 = 0, // 6
-    d: u8 = 0, // 7
-    e: u8 = 0, // 8
-    h: u8 = 0, // 9
-    l: u8 = 0, // 10
-    flags: u8 = 0, // 11
-    timer_m: u8 = 0, // 12
-    timer_divider: u8 = 0, // 13
-    timer_counter: u8 = 0, // 14
-    timer_reset_value: u8 = 0, // 15
-    timer_control: u8 = 0, // 16
-    enabled_interrupts: u8 = 0, // 17
-    active_interrupts: u8 = 0, // 18
-    // halted: bool, // 19
-    // interrupt_master_enable: bool, // 20
-    gpu_mode: u8 = 0, // 19
-    current_scanline: u8 = 0, // 20
-    dots: u32 = 0, // 21
-    background_scroll_x: u8 = 0, // 25
-    background_scroll_y: u8 = 0, // 26
+    dots: u16 = 0, // 4
+    a: u8 = 0, // 6
+    b: u8 = 0, // 7
+    c: u8 = 0, // 8
+    d: u8 = 0, // 9
+    e: u8 = 0, // 10
+    h: u8 = 0, // 11
+    l: u8 = 0, // 12
+    flags: u8 = 0, // 13
+    timer_m: u8 = 0, // 14
+    timer_divider: u8 = 0, // 15
+    timer_counter: u8 = 0, // 16
+    timer_reset_value: u8 = 0, // 17
+    timer_control: u8 = 0, // 18
+    enabled_interrupts: u8 = 0, // 19
+    active_interrupts: u8 = 0, // 20
+    gpu_mode: u8 = 0, // 21
+    current_scanline: u8 = 0, // 22
+    background_scroll_x: u8 = 0, // 23
+    background_scroll_y: u8 = 0, // 24
 };

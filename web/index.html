@@ -254,9 +254,6 @@
     <output id="output" for="form">
       <h2>CPU</h2>
 
-      <h3>Opcode</h3>
-      <p id="opcode">0x00</p>
-
       <h3>Registers</h3>
       <dl class="registers">
         <dt>A</dt>
@@ -339,7 +336,7 @@
           <span id="dots-text">Dots </span>
         </label>
         <label class="scanline">
-          <progress id="scanline" max="154" value="0"></progress>
+          <progress id="scanline" max="154" value="1"></progress>
           <span id="scanline-text">Scanline </span>
         </label>
       </div>
@@ -474,7 +471,7 @@
         );
       }
 
-      function debug(info, opcode) {
+      function debug(info) {
         debugCPU(info.cpu);
         debugGPU(info.gpu);
       }
@@ -511,9 +508,9 @@
         document.getElementById("dots").value = gpu.dots;
         document.getElementById("dots-text").textContent =
           `Dots ${gpu.dots}/456`;
-        document.getElementById("scanline").value = gpu.scanline;
+        document.getElementById("scanline").value = gpu.scanline + 1;
         document.getElementById("scanline-text").textContent =
-          `Scanline ${gpu.scanline}/154`;
+          `Scanline ${gpu.scanline + 1}/154`;
       }
     </script>
   </body>

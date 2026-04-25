@@ -169,19 +169,19 @@ export class Gameboy {
 
     const stackPointer = this.debugView.getUint16(0, true);
     const programCounter = this.debugView.getUint16(2, true);
-    const flags = this.debugView.getUint8(11);
-    const enabledInterrupts = this.debugView.getUint8(17);
-    const activeInterrupts = this.debugView.getUint8(18);
+    const flags = this.debugView.getUint8(13);
+    const enabledInterrupts = this.debugView.getUint8(19);
+    const activeInterrupts = this.debugView.getUint8(20);
     return {
       cpu: {
         registers: {
-          a: this.debugView.getUint8(4),
-          b: this.debugView.getUint8(5),
-          c: this.debugView.getUint8(6),
-          d: this.debugView.getUint8(7),
-          e: this.debugView.getUint8(8),
-          h: this.debugView.getUint8(9),
-          l: this.debugView.getUint8(10),
+          a: this.debugView.getUint8(6),
+          b: this.debugView.getUint8(7),
+          c: this.debugView.getUint8(8),
+          d: this.debugView.getUint8(9),
+          e: this.debugView.getUint8(10),
+          h: this.debugView.getUint8(11),
+          l: this.debugView.getUint8(12),
           stackPointer,
         },
         programCounter,
@@ -213,7 +213,7 @@ export class Gameboy {
   }
 
   gpuDebugInfo() {
-    const gpuMode = this.debugView.getUint8(19);
+    const gpuMode = this.debugView.getUint8(21);
     return {
       mode:
         gpuMode === 0
@@ -223,11 +223,11 @@ export class Gameboy {
             : gpuMode === 2
               ? "drawing"
               : "finding-objects",
-      scanline: this.debugView.getUint8(20),
-      dots: this.debugView.getUint32(21),
+      scanline: this.debugView.getUint8(22),
+      dots: this.debugView.getUint16(4, true),
       background: {
-        scrollX: this.debugView.getUint8(25),
-        scrollY: this.debugView.getUint8(26),
+        scrollX: this.debugView.getUint8(23),
+        scrollY: this.debugView.getUint8(24),
       },
     };
   }

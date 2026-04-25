@@ -13,7 +13,7 @@ lcd: Lcd = .{ .ptr = undefined, .draw = discardDraw },
 interrupts: *Interrupts,
 
 mode: GpuMode = .finding_objects,
-dots: usize = 0,
+dots: u16 = 0,
 
 /// LY, y coordinate. 144-153 is vblank.
 current_scanline: u8 = 0,
@@ -64,7 +64,7 @@ const GpuMode = enum(u2) {
     finding_objects = 3,
 };
 
-pub fn tick(gpu: *GPU, dots: usize) void {
+pub fn tick(gpu: *GPU, dots: u16) void {
     if (!gpu.lcd.enabled) return;
 
     gpu.dots += dots;
