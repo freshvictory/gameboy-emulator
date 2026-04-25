@@ -127,31 +127,40 @@ export class Gameboy {
     const info = this.debugInfo();
     this.debugCpuCallback(info.cpu);
     this.debugGpuCallback(info.gpu);
-    this.debugBackground(info.gpu.background);
+    this.debugBackground(info.gpu);
   }
 
   debugGpu() {
     this.library.updateGpuDebug();
     const info = this.gpuDebugInfo();
     this.debugGpuCallback(info);
-    this.debugBackground(info.background);
+    this.debugBackground(info);
   }
 
   /**
-   * @param {DebugInfo["gpu"]["background"]} background
+   * @param {DebugInfo["gpu"]} gpu
    */
-  debugBackground(background) {
+  debugBackground(gpu) {
     if (!this.backgroundContext) return;
 
     this.backgroundContext.clearRect(0, 0, 255, 255);
 
     this.backgroundContext.putImageData(this.backgroundImageData, 0, 0);
+
     this.backgroundContext.strokeStyle = `rgb(255 0 0)`;
     this.backgroundContext.strokeRect(
-      background.scrollX,
-      background.scrollY,
+      gpu.background.scrollX,
+      gpu.background.scrollY,
       160,
       144,
+    );
+
+    this.backgroundContext.strokeStyle = `rgb(0 255 0)`;
+    this.backgroundContext.strokeRect(
+      gpu.background.scrollX + 160,
+      (gpu.background.scrollY + gpu.scanline) % 256,
+      10,
+      1,
     );
   }
 
