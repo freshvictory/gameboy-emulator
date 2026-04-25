@@ -23,8 +23,8 @@ const CanvasLcd = struct {
 
     pub fn draw(ptr: *anyopaque, row: u8, pixels: [GPU.screen_width]MonoColor) void {
         _ = ptr;
-        const row_16: u16 = row;
-        const row_offset: u16 = GPU.screen_width * 4 * row_16;
+        const row_32: u32 = row;
+        const row_offset: u32 = GPU.screen_width * 4 * row_32;
         for (pixels, 0..) |pixel, i| {
             const offset = row_offset + i * 4 + 3;
             frame_buffer[offset] = pixel.opacity();
