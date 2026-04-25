@@ -38,11 +38,45 @@ pub fn boot(gameboy: *Gameboy, cartridge: Cartridge, lcd: Lcd) void {
 }
 
 pub fn frame(gameboy: *Gameboy) void {
-    gameboy.runCycles(cycles_per_frame);
+    var i: usize = 0;
+    while (i < cycles_per_frame) {
+        const pre_cycles: usize = gameboy.timer.m;
+        _ = gameboy.cpu.step();
+
+        if (gameboy.interrupts.active.v_blank) {
+            return;
+        }
+
+        const post_cycles: usize = gameboy.timer.m;
+        const total_cycles = if (pre_cycles < post_cycles)
+            post_cycles - pre_cycles
+        else
+            post_cycles + (256 - pre_cycles);
+
+        i += total_cycles;
+    }
 }
 
 pub fn scanline(gameboy: *Gameboy) void {
-    gameboy.runCycles(cylces_per_scanline);
+    const initial_scanline = gameboy.gpu.current_scanline;
+
+    var i: usize = 0;
+    while (i < cylces_per_scanline) {
+        const pre_cycles: usize = gameboy.timer.m;
+        _ = gameboy.cpu.step();
+
+        if (gameboy.gpu.current_scanline != initial_scanline) {
+            return;
+        }
+
+        const post_cycles: usize = gameboy.timer.m;
+        const total_cycles = if (pre_cycles < post_cycles)
+            post_cycles - pre_cycles
+        else
+            post_cycles + (256 - pre_cycles);
+
+        i += total_cycles;
+    }
 }
 
 pub fn step(gameboy: *Gameboy) ?u8 {
@@ -55,19 +89,4 @@ fn tick(ptr: *anyopaque) void {
     gameboy.timer.tick();
     // TODO: speed
     gameboy.gpu.tick(4);
-}
-
-fn runCycles(gameboy: *Gameboy, cycles: usize) void {
-    var i: usize = 0;
-    while (i < cycles) {
-        const pre_cycles: usize = gameboy.timer.m;
-        _ = gameboy.cpu.step();
-        const post_cycles: usize = gameboy.timer.m;
-        const total_cycles = if (pre_cycles < post_cycles)
-            post_cycles - pre_cycles
-        else
-            post_cycles + (256 - pre_cycles);
-
-        i += total_cycles;
-    }
 }
