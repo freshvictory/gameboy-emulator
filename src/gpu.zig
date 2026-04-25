@@ -95,8 +95,7 @@ fn draw(gpu: *GPU) void {
 fn horizontalBlank(gpu: *GPU) void {
     if (gpu.dots < 456) return;
 
-    gpu.current_scanline += 1;
-    gpu.handleLcdInterrupt();
+    gpu.newLine();
 
     if (gpu.current_scanline == screen_height) {
         gpu.interrupts.raise(.v_blank);
@@ -104,17 +103,20 @@ fn horizontalBlank(gpu: *GPU) void {
     } else {
         gpu.mode = .finding_objects;
     }
-
-    gpu.dots = 0;
 }
 
 fn verticalBlank(gpu: *GPU) void {
     if (gpu.dots < 456) return;
 
-    gpu.current_scanline += 1;
-    gpu.handleLcdInterrupt();
+    gpu.newLine();
 
     if (gpu.atEndOfFrame()) gpu.resetFrame();
+}
+
+fn newLine(gpu: *GPU) void {
+    gpu.current_scanline += 1;
+    gpu.handleLcdInterrupt();
+    gpu.dots = 0;
 }
 
 fn handleLcdInterrupt(gpu: GPU) void {
@@ -129,7 +131,6 @@ fn atEndOfFrame(gpu: GPU) bool {
 
 fn resetFrame(gpu: *GPU) void {
     gpu.current_scanline = 0;
-    gpu.dots = 0;
     gpu.mode = .finding_objects;
 }
 
