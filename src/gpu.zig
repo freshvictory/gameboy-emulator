@@ -5,8 +5,8 @@ const Speed = @import("cpu.zig").Speed;
 
 const GPU = @This();
 
-const screen_height = 144;
-const screen_width = 160;
+pub const screen_height = 144;
+pub const screen_width = 160;
 const vertical_blank_lines = 10;
 
 lcd: Lcd = .{ .ptr = undefined, .draw = discardDraw },
@@ -50,9 +50,9 @@ pub const Lcd = struct {
     enabled: bool = true,
 
     ptr: *anyopaque,
-    draw: *const fn (*anyopaque, row: u8, pixels: [160]MonoColor) void,
+    draw: *const fn (*anyopaque, row: u8, pixels: [screen_width]MonoColor) void,
 
-    pub fn drawScanline(self: *Lcd, row: u8, pixels: [160]MonoColor) void {
+    pub fn drawScanline(self: *Lcd, row: u8, pixels: [screen_width]MonoColor) void {
         self.draw(self.ptr, row, pixels);
     }
 };
@@ -243,7 +243,7 @@ fn drawCurrentScanline(gpu: *GPU) void {
     gpu.lcd.drawScanline(gpu.current_scanline, pixels);
 }
 
-fn scanlinePixels(gpu: *GPU) [160]MonoColor {
+fn scanlinePixels(gpu: *GPU) [screen_width]MonoColor {
     const layer = gpu.background;
 
     const layer_pixels = gpu.layerPixels(layer);
@@ -255,7 +255,7 @@ fn scanlinePixels(gpu: *GPU) [160]MonoColor {
     else
         column;
 
-    var scanline: [160]MonoColor = undefined;
+    var scanline: [screen_width]MonoColor = undefined;
     @memcpy(&scanline, layer_pixels[row][start_x .. start_x + screen_width]);
 
     return scanline;
@@ -496,7 +496,7 @@ const ObjectAttributes = packed struct(u32) {
     };
 };
 
-fn discardDraw(ptr: *anyopaque, row: u8, pixels: [160]MonoColor) void {
+fn discardDraw(ptr: *anyopaque, row: u8, pixels: [screen_width]MonoColor) void {
     _ = ptr;
     _ = row;
     _ = pixels;

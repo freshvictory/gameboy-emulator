@@ -1,10 +1,11 @@
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
 const Lcd = @import("gpu.zig").Lcd;
-const MonoColor = @import("gpu.zig").MonoColor;
+const GPU = @import("gpu.zig");
+const MonoColor = GPU.MonoColor;
 const Gameboy = @import("root.zig");
 
-const frame_buffer_size = 160 * 144 * 4;
+const frame_buffer_size = GPU.screen_width * GPU.screen_height * 4;
 
 var frame_buffer: [frame_buffer_size]u8 = [_]u8{0} ** frame_buffer_size;
 
@@ -20,23 +21,13 @@ const CanvasLcd = struct {
         };
     }
 
-    pub fn draw(ptr: *anyopaque, row: u8, pixels: [160]MonoColor) void {
+    pub fn draw(ptr: *anyopaque, row: u8, pixels: [GPU.screen_width]MonoColor) void {
         _ = ptr;
         const row_16: u16 = row;
-        const row_offset: u16 = 160 * 4 * row_16;
+        const row_offset: u16 = GPU.screen_width * 4 * row_16;
         for (pixels, 0..) |pixel, i| {
-            const color: u8 = switch (pixel) {
-                .black => 255,
-                .dark_gray => 170,
-                .light_gray => 85,
-                .white => 0,
-            };
-
-            const offset = row_offset + i * 4;
-            frame_buffer[offset] = 0;
-            frame_buffer[offset + 1] = 0;
-            frame_buffer[offset + 2] = 0;
-            frame_buffer[offset + 3] = color;
+            const offset = row_offset + i * 4 + 3;
+            frame_buffer[offset] = pixel.opacity();
         }
     }
 };

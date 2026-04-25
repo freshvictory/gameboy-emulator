@@ -151,13 +151,13 @@ export class Gameboy {
     this.backgroundContext.strokeRect(
       gpu.background.scrollX,
       gpu.background.scrollY,
-      160,
-      144,
+      this.frameImageData.width,
+      this.frameImageData.height,
     );
 
     this.backgroundContext.strokeStyle = `rgb(0 255 0)`;
     this.backgroundContext.strokeRect(
-      gpu.background.scrollX + 160,
+      gpu.background.scrollX + this.frameImageData.width,
       (gpu.background.scrollY + gpu.scanline) % 256,
       10,
       1,
