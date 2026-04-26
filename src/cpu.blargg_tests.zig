@@ -3,6 +3,7 @@
 
 const std = @import("std");
 const Cartridge = @import("cartridge.zig");
+const GPU = @import("gpu.zig");
 const Gameboy = @import("root.zig");
 
 fn run(comptime filename: []const u8) !void {
@@ -45,7 +46,7 @@ fn run(comptime filename: []const u8) !void {
     }
 }
 
-fn draw(self: *anyopaque, row: u8, pixels: [160]u2) void {
+fn draw(self: *anyopaque, row: u8, pixels: [GPU.screen_width]GPU.MonoColor) void {
     _ = self;
     _ = row;
     _ = pixels;
