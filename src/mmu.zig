@@ -43,8 +43,37 @@ pub fn memory(mmu: *MMU) Memory {
     };
 }
 
+pub fn read(mmu: MMU, mapping: Mapping) u8 {
+    return switch (mapping) {
+        .lcd_control => mmu.gpu.lcdControl().int(),
+        .lcd_status => mmu.gpu.lcdStatus().int(),
+        .current_scanline => mmu.gpu.current_scanline,
+        .scanline_compare => mmu.gpu.scanline_compare,
+        .layer_palette => mmu.gpu.layer_palette.int(),
+        .object_palette_0 => mmu.gpu.object_palette_0.int(),
+        .object_palette_1 => mmu.gpu.object_palette_1.int(),
+        .background_scroll_y => mmu.gpu.background.scroll_y,
+        .background_scroll_x => mmu.gpu.background.scroll_x,
+        .window_scroll_y => mmu.gpu.window.scroll_y,
+        .window_scroll_x => mmu.gpu.window.scroll_x,
+
+        .serial_data => 0x00,
+
+        .timer_divider => mmu.timer.divider,
+        .timer_counter => mmu.timer.counter,
+        .timer_modulo => mmu.timer.reset_value,
+        .timer_control => mmu.timer.control.int(),
+
+        .interrupt_flag => mmu.interrupts.active.int(),
+        .interrupt_enable => mmu.interrupts.enabled.int(),
+
+        _ => 0xFF,
+    };
+}
+
 fn readByte(ptr: *anyopaque, address: u16) u8 {
     const mmu: *MMU = @ptrCast(@alignCast(ptr));
+
     return switch (address) {
         0x0000...0x7FFF => mmu.cartridge.readByte(address),
         0x8000...0x97FF => mmu.gpu.readTileData(address - 0x8000),
@@ -56,35 +85,7 @@ fn readByte(ptr: *anyopaque, address: u16) u8 {
         0xFEA0...0xFEFF => 0xFF, // Unusable
         0xFF80...0xFFFE => mmu.high_ram[address - 0xFF80],
 
-        else => mapped: {
-            const mapping: Mapping = @enumFromInt(address);
-
-            break :mapped switch (mapping) {
-                .lcd_control => mmu.gpu.lcdControl().int(),
-                .lcd_status => mmu.gpu.lcdStatus().int(),
-                .current_scanline => mmu.gpu.current_scanline,
-                .scanline_compare => mmu.gpu.scanline_compare,
-                .layer_palette => mmu.gpu.layer_palette.int(),
-                .object_palette_0 => mmu.gpu.object_palette_0.int(),
-                .object_palette_1 => mmu.gpu.object_palette_1.int(),
-                .background_scroll_y => mmu.gpu.background.scroll_y,
-                .background_scroll_x => mmu.gpu.background.scroll_x,
-                .window_scroll_y => mmu.gpu.window.scroll_y,
-                .window_scroll_x => mmu.gpu.window.scroll_x,
-
-                .serial_data => 0x00,
-
-                .timer_divider => mmu.timer.divider,
-                .timer_counter => mmu.timer.counter,
-                .timer_modulo => mmu.timer.reset_value,
-                .timer_control => mmu.timer.control.int(),
-
-                .interrupt_flag => mmu.interrupts.active.int(),
-                .interrupt_enable => mmu.interrupts.enabled.int(),
-
-                _ => 0xFF,
-            };
-        },
+        else => mmu.read(@enumFromInt(address)),
     };
 }
 

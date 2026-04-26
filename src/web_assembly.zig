@@ -78,7 +78,6 @@ export fn getDebugStatePointer() *DebugState {
 }
 
 export fn updateDebugState() void {
-    const control: u3 = @bitCast(gameboy.timer.control);
     debug_state = .{
         .a = gameboy.cpu.registers.a,
         .b = gameboy.cpu.registers.b,
@@ -93,12 +92,12 @@ export fn updateDebugState() void {
         // .interrupt_master_enable = gameboy.cpu.interrupt_master_enable,
         // .halted = gameboy.cpu.halted,
         .timer_m = gameboy.timer.m,
-        .timer_divider = gameboy.timer.divider,
-        .timer_counter = gameboy.timer.counter,
-        .timer_reset_value = gameboy.timer.reset_value,
-        .timer_control = control,
-        .enabled_interrupts = gameboy.interrupts.enabled.int(),
-        .active_interrupts = gameboy.interrupts.active.int(),
+        .timer_divider = gameboy.mmu.read(.timer_divider),
+        .timer_counter = gameboy.mmu.read(.timer_counter),
+        .timer_reset_value = gameboy.mmu.read(.timer_modulo),
+        .timer_control = gameboy.mmu.read(.timer_control),
+        .enabled_interrupts = gameboy.mmu.read(.interrupt_enable),
+        .active_interrupts = gameboy.mmu.read(.interrupt_flag),
     };
     updateGpuDebug();
 }
@@ -115,10 +114,10 @@ export fn updateGpuDebug() void {
     }
 
     debug_state.gpu_mode = @intFromEnum(gameboy.gpu.mode);
-    debug_state.current_scanline = gameboy.gpu.current_scanline;
+    debug_state.current_scanline = gameboy.mmu.read(.current_scanline);
     debug_state.dots = gameboy.gpu.dots;
-    debug_state.background_scroll_x = gameboy.gpu.background.scroll_x;
-    debug_state.background_scroll_y = gameboy.gpu.background.scroll_y;
+    debug_state.background_scroll_x = gameboy.mmu.read(.background_scroll_x);
+    debug_state.background_scroll_y = gameboy.mmu.read(.background_scroll_y);
 }
 
 const DebugState = extern struct {
