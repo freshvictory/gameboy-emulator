@@ -13,6 +13,8 @@ export fn getFramePointer() *[frame_buffer_size]u8 {
     return &frame_buffer;
 }
 
+extern fn drawFrame() void;
+
 const CanvasLcd = struct {
     pub fn lcd(self: *CanvasLcd) Lcd {
         return .{
@@ -28,6 +30,10 @@ const CanvasLcd = struct {
         for (pixels, 0..) |pixel, i| {
             const offset = row_offset + i * 4 + 3;
             frame_buffer[offset] = pixel.opacity();
+        }
+
+        if (row == 143) {
+            drawFrame();
         }
     }
 };

@@ -43,10 +43,6 @@ pub fn frame(gameboy: *Gameboy) void {
         const pre_cycles: usize = gameboy.timer.m;
         _ = gameboy.cpu.step();
 
-        if (gameboy.interrupts.active.v_blank) {
-            return;
-        }
-
         const post_cycles: usize = gameboy.timer.m;
         const total_cycles = if (pre_cycles < post_cycles)
             post_cycles - pre_cycles

@@ -85,7 +85,7 @@ export class Gameboy {
   play() {
     cancelAnimationFrame(this.animationId);
     const frame = () => {
-      this.frame();
+      this.library.frame();
       this.animationId = requestAnimationFrame(frame);
     };
     this.animationId = requestAnimationFrame(frame);
@@ -102,7 +102,6 @@ export class Gameboy {
 
   frame() {
     this.library.frame();
-    this.drawFrame();
     this.debugGpu();
   }
 
@@ -113,7 +112,9 @@ export class Gameboy {
   }
 
   drawFrame() {
-    this.context.putImageData(this.frameImageData, 0, 0);
+    requestAnimationFrame(() =>
+      this.context.putImageData(this.frameImageData, 0, 0),
+    );
   }
 
   /** @param {ArrayBuffer} data */
