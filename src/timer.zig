@@ -38,6 +38,14 @@ const Frequency = enum(u2) {
 const Control = packed struct(u3) {
     frequency: Frequency = .every_256,
     enabled: bool = false,
+
+    pub fn int(self: Control) u3 {
+        return @bitCast(self);
+    }
+
+    pub fn from(value: u3) Control {
+        return @bitCast(value);
+    }
 };
 
 pub fn tick(timer: *Timer) void {
