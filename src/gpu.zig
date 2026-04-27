@@ -246,19 +246,7 @@ fn drawCurrentScanline(gpu: *GPU) void {
 fn scanlinePixels(gpu: *GPU) [screen_width]MonoColor {
     const layer = gpu.background;
 
-    const layer_pixels = gpu.layerPixels(layer);
-    const row = gpu.current_scanline +% layer.scroll_y;
-    const column = layer.scroll_x;
-
-    const start_x = if (column +% screen_width < column)
-        column +% screen_width
-    else
-        column;
-
-    var scanline: [screen_width]MonoColor = undefined;
-    @memcpy(&scanline, layer_pixels[row][start_x .. start_x + screen_width]);
-
-    return scanline;
+    return gpu.layerLinePixels(layer, gpu.current_scanline);
 }
 
 test scanlinePixels {
@@ -284,7 +272,7 @@ test scanlinePixels {
         .background = .{
             .enabled = true,
             .scroll_x = 1,
-            .scroll_y = 1,
+            .scroll_y = 1 + 8 * 1,
             .tile_map_area = .low,
         },
 
@@ -320,6 +308,41 @@ const Layer = struct {
 
     tile_map_area: TileMapArea = .low,
 };
+
+fn layerLinePixels(gpu: *GPU, layer: Layer, line: u8) [screen_width]MonoColor {
+    var pixels: [screen_width]MonoColor = undefined;
+
+    const tile_map = gpu.tileMap(layer.tile_map_area);
+
+    const row = layer.scroll_y +% line;
+    const tile_row: usize = row / 8;
+    const tile_row_offset = tile_row * 32;
+    const tile_pixel_row = row % 8;
+
+    var layer_row_pixels: [256]MonoColor = undefined;
+
+    for (0..32) |tile_column| {
+        const index = tile_row_offset + tile_column;
+        const tile_id = tile_map[index];
+        const tile = gpu.readLayerTile(tile_id);
+        const tile_pixels = tile.pixels[tile_pixel_row];
+
+        const tile_column_start = tile_column * 8;
+        for (tile_pixels, 0..) |pixel, i| {
+            const color = gpu.layer_palette.colorOf(pixel);
+            layer_row_pixels[tile_column_start + i] = color;
+        }
+    }
+
+    const column = layer.scroll_x;
+    for (0..160) |i| {
+        const wrapped_column = column +% i;
+
+        pixels[i] = layer_row_pixels[wrapped_column];
+    }
+
+    return pixels;
+}
 
 pub fn layerPixels(gpu: *GPU, layer: Layer) [256][256]MonoColor {
     var pixels: [256][256]MonoColor = undefined;
