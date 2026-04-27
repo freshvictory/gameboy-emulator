@@ -310,7 +310,11 @@ const Layer = struct {
 };
 
 fn layerLinePixels(gpu: *GPU, layer: Layer, line: u8) [screen_width]MonoColor {
-    var pixels: [screen_width]MonoColor = undefined;
+    var pixels: [screen_width]MonoColor = [_]MonoColor{.white} ** screen_width;
+
+    if (!layer.enabled) {
+        return pixels;
+    }
 
     const tile_map = gpu.tileMap(layer.tile_map_area);
 
